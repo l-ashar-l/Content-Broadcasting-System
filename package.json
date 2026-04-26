@@ -1,0 +1,25 @@
+{
+  "name": "content-broadcasting-system",
+  "version": "1.0.0",
+  "description": "Backend",
+  "homepage": "https://github.com/l-ashar-l/Content-Broadcasting-System#readme",
+  "bugs": {
+    "url": "https://github.com/l-ashar-l/Content-Broadcasting-System/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/l-ashar-l/Content-Broadcasting-System.git"
+  },
+  "license": "ISC",
+  "author": "ashar",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "pg": "^8.20.0",
+    "sequelize": "^6.37.8"
+  }
+}
