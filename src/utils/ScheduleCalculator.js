@@ -54,18 +54,15 @@ export default class ScheduleCalculator {
       ...contentList.map((c) => new Date(c.start_time).getTime())
     );
 
-    // Calculate time elapsed since earliest start
     const elapsedMs = currentTime.getTime() - earliestStartTime;
 
-    // Calculate total cycle duration
     const totalDuration = contentList.reduce(
       (sum, content) =>
         sum + (content.schedule?.duration || content.rotation_duration || 5),
       0
     );
 
-    // Ensure we loop through the rotation
-    let timeInCycle = elapsedMs % (totalDuration * 60 * 1000); // Convert minutes to ms
+    let timeInCycle = elapsedMs % (totalDuration * 60 * 1000);
 
     let cumulativeTime = 0;
     for (let i = 0; i < contentList.length; i++) {

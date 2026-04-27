@@ -29,7 +29,7 @@ import { Router } from 'express';
  *               file:
  *                 type: string
  *                 format: binary
- *                 description: File to upload (pdf, jpg, png, gif)
+ *                 description: File to upload (jpg, png, gif)
  *               title:
  *                 type: string
  *                 example: "Mathematics Lesson 1"
