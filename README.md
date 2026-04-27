@@ -43,7 +43,7 @@ A production-ready, enterprise-grade backend system for distributing educational
 
 ### Prerequisites
 
-- **Node.js** 16+ 
+- **Node.js** 22+ 
 - **PostgreSQL** 12+
 - **npm** or **yarn**
 
