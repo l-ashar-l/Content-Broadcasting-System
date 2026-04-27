@@ -2,19 +2,8 @@ import { Content } from '../models/index.js';
 import AppError from '../utils/AppError.js';
 import Validator from '../utils/Validator.js';
 
-/**
- * ApprovalService - Handles content approval workflow
- * Follows SRP: Only responsible for approval operations
- * Follows DIP: Depends on Content model
- */
 export default class ApprovalService {
-  /**
-   * Approve content
-   * @param {number} contentId - Content ID
-   * @param {number} principalId - Principal user ID
-   * @returns {Promise<Object>} Approved content
-   * @throws {AppError} If content not found or not pending
-   */
+
   async approveContent(contentId, principalId) {
     Validator.validateId(contentId, 'Content ID');
     Validator.validateId(principalId, 'Principal ID');
@@ -40,14 +29,6 @@ export default class ApprovalService {
     return content;
   }
 
-  /**
-   * Reject content
-   * @param {number} contentId - Content ID
-   * @param {number} principalId - Principal user ID
-   * @param {string} reason - Rejection reason
-   * @returns {Promise<Object>} Rejected content
-   * @throws {AppError} If validation fails
-   */
   async rejectContent(contentId, principalId, reason) {
     Validator.validateId(contentId, 'Content ID');
     Validator.validateId(principalId, 'Principal ID');
@@ -78,12 +59,6 @@ export default class ApprovalService {
     return content;
   }
 
-  /**
-   * Get approval status of content
-   * @param {number} contentId - Content ID
-   * @returns {Promise<Object>} Content with approval details
-   * @throws {AppError} If content not found
-   */
   async getApprovalStatus(contentId) {
     Validator.validateId(contentId, 'Content ID');
 
@@ -110,10 +85,6 @@ export default class ApprovalService {
     };
   }
 
-  /**
-   * Get approval statistics
-   * @returns {Promise<Object>} Statistics
-   */
   async getApprovalStats() {
     const stats = {};
 

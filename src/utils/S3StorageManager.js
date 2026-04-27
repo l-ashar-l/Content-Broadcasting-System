@@ -4,10 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import AppError from './AppError.js';
 
-/**
- * S3StorageManager - Handles file uploads and deletions to AWS S3
- * Follows SRP: Only responsible for S3 operations
- */
 export default class S3StorageManager {
   constructor({
     accessKeyId,
@@ -27,13 +23,6 @@ export default class S3StorageManager {
     });
   }
 
-  /**
-   * Upload a file buffer to S3
-   * @param {Buffer} buffer - File buffer
-   * @param {string} originalName - Original file name
-   * @param {string} mimetype - File MIME type
-   * @returns {Promise<string>} S3 key (path)
-   */
   async uploadFile(buffer, originalName, mimetype) {
     const ext = path.extname(originalName);
     const key = `${Date.now()}-${uuidv4()}${ext}`;
@@ -53,11 +42,6 @@ export default class S3StorageManager {
     }
   }
 
-  /**
-   * Delete a file from S3
-   * @param {string} key - S3 key (path)
-   * @returns {Promise<void>}
-   */
   async deleteFile(key) {
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
@@ -70,12 +54,6 @@ export default class S3StorageManager {
     }
   }
 
-  /**
-   * Get a signed URL for downloading/viewing
-   * @param {string} key - S3 key (path)
-   * @param {number} expiresIn - Expiry in seconds
-   * @returns {Promise<string>} Signed URL
-   */
   async getSignedUrl(key, expiresIn = 3600) {
     const command = new GetObjectCommand({
       Bucket: this.bucket,

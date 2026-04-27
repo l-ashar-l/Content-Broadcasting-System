@@ -1,20 +1,11 @@
 import JwtManager from '../utils/JwtManager.js';
 import AppError from '../utils/AppError.js';
 
-/**
- * AuthMiddleware - Handles JWT authentication
- * Follows SRP: Only responsible for authentication verification
- * Follows DIP: Depends on injected JwtManager
- */
 export default class AuthMiddleware {
   constructor(jwtManager) {
     this.jwtManager = jwtManager;
   }
 
-  /**
-   * Verify JWT token middleware
-   * @returns {Function} Express middleware
-   */
   verifyToken() {
     return (req, res, next) => {
       try {
@@ -35,11 +26,6 @@ export default class AuthMiddleware {
     };
   }
 
-  /**
-   * Verify user role middleware
-   * @param {...string} allowedRoles - Allowed user roles
-   * @returns {Function} Express middleware
-   */
   verifyRole(...allowedRoles) {
     return (req, res, next) => {
       if (!req.user) {
@@ -59,26 +45,14 @@ export default class AuthMiddleware {
     };
   }
 
-  /**
-   * Verify principal access middleware
-   * @returns {Function} Express middleware
-   */
   verifyPrincipal() {
     return this.verifyRole('principal');
   }
 
-  /**
-   * Verify teacher access middleware
-   * @returns {Function} Express middleware
-   */
   verifyTeacher() {
     return this.verifyRole('teacher');
   }
 
-  /**
-   * Verify teacher or principal access middleware
-   * @returns {Function} Express middleware
-   */
   verifyAuthenticatedUser() {
     return this.verifyRole('principal', 'teacher');
   }

@@ -1,11 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-/**
- * ContentSchedule Model - Manages content rotation order and duration
- * Follows SRP: Only defines schedule schema
- * Handles rotation order and duration for each content in a slot
- */
 const ContentSchedule = sequelize.define(
   'ContentSchedule',
   {

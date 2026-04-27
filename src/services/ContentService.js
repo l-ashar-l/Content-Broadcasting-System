@@ -4,19 +4,8 @@ import Validator from '../utils/Validator.js';
 import ScheduleCalculator from '../utils/ScheduleCalculator.js';
 import { s3StorageManager } from '../utils/s3singletons.js';
 
-/**
- * ContentService - Handles content operations
- * Follows SRP: Only responsible for content business logic
- * Follows DIP: Depends on injected models
- */
 export default class ContentService {
-  /**
-   * Upload content
-   * @param {Object} contentData - {title, subject, description, userId}
-   * @param {Object} file - Uploaded file object
-   * @returns {Promise<Object>} Created content
-   * @throws {AppError} If validation fails
-   */
+
   async uploadContent(contentData, file) {
     const { title, subject, description, userId, start_time, end_time, rotation_duration } =
       contentData;
@@ -66,12 +55,6 @@ export default class ContentService {
     return content;
   }
 
-  /**
-   * Get content by ID
-   * @param {number} contentId - Content ID
-   * @returns {Promise<Object>} Content object
-   * @throws {AppError} If content not found
-   */
   async getContentById(contentId) {
     Validator.validateId(contentId, 'Content ID');
 
@@ -90,12 +73,6 @@ export default class ContentService {
     return content;
   }
 
-  /**
-   * Get content by teacher
-   * @param {number} userId - Teacher user ID
-   * @param {Object} options - {page, limit}
-   * @returns {Promise<Object>} {contents, total, page, limit}
-   */
   async getContentByTeacher(userId, options = {}) {
     const page = options.page || 1;
     const limit = options.limit || 10;
@@ -120,11 +97,6 @@ export default class ContentService {
     };
   }
 
-  /**
-   * Get all pending content (for principal approval)
-   * @param {Object} options - {page, limit}
-   * @returns {Promise<Object>} {contents, total}
-   */
   async getPendingContent(options = {}) {
     const page = options.page || 1;
     const limit = options.limit || 10;
@@ -148,11 +120,6 @@ export default class ContentService {
     };
   }
 
-  /**
-   * Get approved content
-   * @param {Object} options - {subject, page, limit}
-   * @returns {Promise<Object>} {contents, total}
-   */
   async getApprovedContent(options = {}) {
     const page = options.page || 1;
     const limit = options.limit || 10;
@@ -181,11 +148,6 @@ export default class ContentService {
     };
   }
 
-  /**
-   * Ensure subject slot exists
-   * @param {string} subject - Subject name
-   * @returns {Promise<Object>} Content slot
-   */
   async ensureSubjectSlot(subject) {
     let slot = await ContentSlot.findOne({ where: { subject } });
     if (!slot) {
@@ -194,11 +156,6 @@ export default class ContentService {
     return slot;
   }
 
-  /**
-   * Get content for live broadcasting
-   * @param {number} teacherId - Teacher ID
-   * @returns {Promise<Object>} Active content or null
-   */
   async getLiveContent(teacherId) {
     // Get all approved content for this teacher
     const content = await Content.findAll({

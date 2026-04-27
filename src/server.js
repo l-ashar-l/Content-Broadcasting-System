@@ -3,11 +3,6 @@ import appFactory from './app.js';
 
 dotenv.config();
 
-/**
- * Server Bootstrap
- * Initializes database and starts the Express server
- * Follows OOP: Server startup is encapsulated
- */
 async function startServer() {
   try {
     const port = process.env.PORT || 5000;

@@ -1,19 +1,8 @@
 import ResponseFormatter from '../utils/ResponseFormatter.js';
 import AppError from '../utils/AppError.js';
 
-/**
- * ErrorHandler - Global error handling middleware
- * Follows SRP: Only responsible for error handling
- * Centralizes error responses for all endpoints
- */
 export class ErrorHandler {
-  /**
-   * Express error handler middleware
-   * @param {Error} error - Error object
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
+
   static handle(error, req, res, next) {
     let statusCode = 500;
     let message = 'Internal Server Error';
@@ -38,17 +27,9 @@ export class ErrorHandler {
   }
 }
 
-/**
- * RequestLogger - Logs incoming requests
- * Follows SRP: Only responsible for logging
- */
 export class RequestLogger {
-  /**
-   * Express middleware for logging
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
+  // Express middleware for logging
+  
   static log(req, res, next) {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
     if (Object.keys(req.query).length > 0) {

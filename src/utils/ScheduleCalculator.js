@@ -1,17 +1,6 @@
 import AppError from './AppError.js';
 
-/**
- * ScheduleCalculator - Calculates active content based on scheduling logic
- * Follows SRP: Only responsible for schedule calculations
- * This is CRITICAL for the rotating content feature
- */
 export default class ScheduleCalculator {
-  /**
-   * Check if content is within active time window
-   * @param {Object} content - Content object with start_time and end_time
-   * @param {Date} currentTime - Current time (optional, defaults to now)
-   * @returns {boolean} True if content is within active window
-   */
   static isWithinTimeWindow(content, currentTime = new Date()) {
     if (!content.start_time || !content.end_time) {
       return false;
@@ -23,12 +12,6 @@ export default class ScheduleCalculator {
     return currentTime >= startTime && currentTime <= endTime;
   }
 
-  /**
-   * Get active content for a subject considering rotation
-   * @param {Array} contentList - Array of content items for a subject
-   * @param {Date} currentTime - Current time (optional, defaults to now)
-   * @returns {Object|null} Active content or null if no content available
-   */
   static getActiveContent(contentList, currentTime = new Date()) {
     if (!contentList || contentList.length === 0) {
       return null;
@@ -63,12 +46,6 @@ export default class ScheduleCalculator {
     return activeContent[rotationIndex];
   }
 
-  /**
-   * Calculate which index in the rotation list is currently active
-   * @param {Array} contentList - Sorted list of content with duration
-   * @param {Date} currentTime - Current time
-   * @returns {number} Index of active content
-   */
   static calculateRotationIndex(contentList, currentTime = new Date()) {
     if (contentList.length === 0) return 0;
 
@@ -105,11 +82,6 @@ export default class ScheduleCalculator {
     return 0;
   }
 
-  /**
-   * Get content rotation schedule
-   * @param {Array} contentList - List of content for a subject
-   * @returns {Array} Rotation schedule with timing information
-   */
   static getRotationSchedule(contentList) {
     return contentList.map((content, index) => ({
       index,
@@ -120,11 +92,6 @@ export default class ScheduleCalculator {
     }));
   }
 
-  /**
-   * Validate scheduling parameters
-   * @param {Object} scheduleData - Schedule data object
-   * @throws {AppError} If parameters are invalid
-   */
   static validateScheduleData(scheduleData) {
     const { start_time, end_time, rotation_duration } = scheduleData;
 

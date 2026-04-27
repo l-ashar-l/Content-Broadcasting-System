@@ -3,11 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-/**
- * Database Configuration
- * Follows SRP: Only responsible for database connection setup
- * Follows DIP: Configuration injected via environment
- */
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'content_broadcasting',
   process.env.DB_USER || 'postgres',

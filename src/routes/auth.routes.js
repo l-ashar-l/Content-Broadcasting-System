@@ -177,14 +177,6 @@ import { Router } from 'express';
  *         description: Unauthorized - Token required or invalid
  */
 
-/**
- * createAuthRoutes - Factory function to create auth routes
- * Follows DIP: Routes depend on injected controller and middleware
- * Follows SRP: Only responsible for route definitions
- * @param {AuthController} authController - Injected auth controller
- * @param {AuthMiddleware} authMiddleware - Injected auth middleware
- * @returns {Router} Express router
- */
 export function createAuthRoutes(authController, authMiddleware) {
   const router = Router();
 

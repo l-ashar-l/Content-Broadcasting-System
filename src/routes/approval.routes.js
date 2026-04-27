@@ -168,14 +168,6 @@ import { Router } from 'express';
  *         description: Not a principal
  */
 
-/**
- * createApprovalRoutes - Factory function to create approval routes
- * Follows DIP: Routes depend on injected controllers and middleware
- * Follows SRP: Only responsible for route definitions
- * @param {ApprovalController} approvalController - Injected approval controller
- * @param {AuthMiddleware} authMiddleware - Injected auth middleware
- * @returns {Router} Express router
- */
 export function createApprovalRoutes(approvalController, authMiddleware) {
   const router = Router();
 

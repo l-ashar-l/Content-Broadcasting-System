@@ -1,11 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-/**
- * User Model - Represents user entity
- * Follows SRP: Only defines user schema
- * Follows OCP: Can be extended with hooks and methods
- */
 const User = sequelize.define(
   'User',
   {

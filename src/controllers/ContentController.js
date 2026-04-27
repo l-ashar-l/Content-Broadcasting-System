@@ -1,11 +1,6 @@
 import ResponseFormatter from '../utils/ResponseFormatter.js';
 import { s3StorageManager } from '../utils/s3singletons.js';
 
-/**
- * ContentController - Handles content endpoints
- * Follows SRP: Only responsible for HTTP request/response handling
- * Follows DIP: Depends on injected ContentService and FileManager
- */
 export default class ContentController {
   constructor(contentService, fileManager) {
     this.contentService = contentService;
@@ -15,9 +10,6 @@ export default class ContentController {
   /**
    * Upload content endpoint handler
    * POST /content/upload
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async uploadContent(req, res, next) {
     try {
@@ -53,9 +45,6 @@ export default class ContentController {
   /**
    * Get content by ID endpoint handler
    * GET /content/:id
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getContentById(req, res, next) {
     try {
@@ -91,9 +80,6 @@ export default class ContentController {
   /**
    * Get signed URL for content file
    * GET /content/:id/download-url
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getContentDownloadUrl(req, res, next) {
     try {
@@ -133,9 +119,6 @@ export default class ContentController {
   /**
    * Get teacher's content endpoint handler
    * GET /content/teacher/my-content
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getMyContent(req, res, next) {
     try {
@@ -166,9 +149,6 @@ export default class ContentController {
   /**
    * Get pending content endpoint handler (for principal)
    * GET /content/pending
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getPendingContent(req, res, next) {
     try {
@@ -196,9 +176,6 @@ export default class ContentController {
   /**
    * Get approved content endpoint handler
    * GET /content/approved
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getApprovedContent(req, res, next) {
     try {

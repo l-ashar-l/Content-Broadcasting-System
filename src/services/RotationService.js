@@ -2,19 +2,8 @@ import { Content, ContentSlot, ContentSchedule } from '../models/index.js';
 import ScheduleCalculator from '../utils/ScheduleCalculator.js';
 import AppError from '../utils/AppError.js';
 
-/**
- * RotationService - Manages content rotation and scheduling
- * Follows SRP: Only responsible for rotation logic
- * Follows DIP: Depends on injected models and ScheduleCalculator
- * CRITICAL: This service implements the core scheduling feature
- */
 export default class RotationService {
-  /**
-   * Get live content for a teacher with rotation
-   * This is the core API endpoint logic
-   * @param {number} teacherId - Teacher ID
-   * @returns {Promise<Array|null>} Array of active contents or null
-   */
+
   async getLiveContent(teacherId) {
     const contents = await Content.findAll({
       where: {
@@ -55,12 +44,6 @@ export default class RotationService {
     return activeContents.length > 0 ? activeContents : null;
   }
 
-  /**
-   * Get active content for specific subject
-   * @param {number} teacherId - Teacher ID
-   * @param {string} subject - Subject name
-   * @returns {Promise<Object|null>} Active content or null
-   */
   async getActiveContentBySubject(teacherId, subject) {
     const contents = await Content.findAll({
       where: {
@@ -84,12 +67,6 @@ export default class RotationService {
     return ScheduleCalculator.getActiveContent(contents) || null;
   }
 
-  /**
-   * Get rotation schedule for a subject
-   * @param {number} teacherId - Teacher ID
-   * @param {string} subject - Subject name
-   * @returns {Promise<Array>} Rotation schedule
-   */
   async getRotationSchedule(teacherId, subject) {
     const contents = await Content.findAll({
       where: {
@@ -109,14 +86,6 @@ export default class RotationService {
     return ScheduleCalculator.getRotationSchedule(contents);
   }
 
-  /**
-   * Add content to rotation
-   * @param {number} contentId - Content ID
-   * @param {string} subject - Subject name
-   * @param {number} rotationOrder - Order in rotation
-   * @param {number} duration - Duration in minutes
-   * @returns {Promise<Object>} Schedule record
-   */
   async addToRotation(contentId, subject, rotationOrder, duration) {
     const content = await Content.findByPk(contentId);
     if (!content) {
@@ -144,12 +113,6 @@ export default class RotationService {
     return schedule;
   }
 
-  /**
-   * Update rotation schedule
-   * @param {number} scheduleId - Schedule ID
-   * @param {Object} updates - {rotation_order, duration}
-   * @returns {Promise<Object>} Updated schedule
-   */
   async updateRotationSchedule(scheduleId, updates) {
     const schedule = await ContentSchedule.findByPk(scheduleId);
     if (!schedule) {
@@ -167,11 +130,6 @@ export default class RotationService {
     return schedule;
   }
 
-  /**
-   * Remove content from rotation
-   * @param {number} scheduleId - Schedule ID
-   * @returns {Promise<void>}
-   */
   async removeFromRotation(scheduleId) {
     const schedule = await ContentSchedule.findByPk(scheduleId);
     if (!schedule) {

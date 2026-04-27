@@ -1,10 +1,5 @@
 import ResponseFormatter from '../utils/ResponseFormatter.js';
 
-/**
- * ApprovalController - Handles approval endpoints
- * Follows SRP: Only responsible for HTTP request/response handling
- * Follows DIP: Depends on injected ApprovalService
- */
 export default class ApprovalController {
   constructor(approvalService) {
     this.approvalService = approvalService;
@@ -13,9 +8,6 @@ export default class ApprovalController {
   /**
    * Approve content endpoint handler
    * POST /approval/approve/:contentId
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async approveContent(req, res, next) {
     try {
@@ -39,9 +31,6 @@ export default class ApprovalController {
   /**
    * Reject content endpoint handler
    * POST /approval/reject/:contentId
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async rejectContent(req, res, next) {
     try {
@@ -67,9 +56,6 @@ export default class ApprovalController {
   /**
    * Get approval status endpoint handler
    * GET /approval/status/:contentId
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getApprovalStatus(req, res, next) {
     try {
@@ -90,9 +76,6 @@ export default class ApprovalController {
   /**
    * Get approval statistics endpoint handler
    * GET /approval/stats
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getApprovalStats(req, res, next) {
     try {

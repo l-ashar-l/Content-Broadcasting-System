@@ -3,11 +3,6 @@ import Content from './Content.js';
 import ContentSlot from './ContentSlot.js';
 import ContentSchedule from './ContentSchedule.js';
 
-/**
- * Database Models Configuration
- * Establishes relationships between models following OOP principles
- */
-
 // User relationships
 User.hasMany(Content, { foreignKey: 'uploaded_by', as: 'uploadedContent' });
 Content.belongsTo(User, { foreignKey: 'uploaded_by', as: 'uploader' });

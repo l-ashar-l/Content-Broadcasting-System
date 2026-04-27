@@ -4,23 +4,12 @@ import JwtManager from '../utils/JwtManager.js';
 import AppError from '../utils/AppError.js';
 import Validator from '../utils/Validator.js';
 
-/**
- * AuthService - Handles authentication operations
- * Follows SRP: Only responsible for auth business logic
- * Follows DIP: Depends on injected PasswordManager and JwtManager
- */
 export default class AuthService {
   constructor(passwordManager, jwtManager) {
     this.passwordManager = passwordManager;
     this.jwtManager = jwtManager;
   }
 
-  /**
-   * Register new user
-   * @param {Object} userData - User data {name, email, password, role}
-   * @returns {Promise<Object>} Created user without password
-   * @throws {AppError} If user already exists or validation fails
-   */
   async register(userData) {
     const { name, email, password, role } = userData;
 
@@ -50,13 +39,6 @@ export default class AuthService {
     return this.formatUserResponse(user);
   }
 
-  /**
-   * Login user
-   * @param {string} email - User email
-   * @param {string} password - User password
-   * @returns {Promise<Object>} {user, token}
-   * @throws {AppError} If credentials are invalid
-   */
   async login(email, password) {
     Validator.validateEmail(email);
     Validator.validateRequiredFields({ password }, ['password']);
@@ -89,12 +71,6 @@ export default class AuthService {
     };
   }
 
-  /**
-   * Get user by ID
-   * @param {number} userId - User ID
-   * @returns {Promise<Object>} User object
-   * @throws {AppError} If user not found
-   */
   async getUserById(userId) {
     const user = await User.findByPk(userId);
     if (!user) {
@@ -103,11 +79,6 @@ export default class AuthService {
     return this.formatUserResponse(user);
   }
 
-  /**
-   * Format user response (remove sensitive data)
-   * @param {Object} user - User object
-   * @returns {Object} Formatted user
-   */
   formatUserResponse(user) {
     const { password_hash, ...userWithoutPassword } = user.toJSON();
     return userWithoutPassword;

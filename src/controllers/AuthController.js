@@ -1,10 +1,5 @@
 import ResponseFormatter from '../utils/ResponseFormatter.js';
 
-/**
- * AuthController - Handles authentication endpoints
- * Follows SRP: Only responsible for HTTP request/response handling
- * Follows DIP: Depends on injected AuthService
- */
 export default class AuthController {
   constructor(authService) {
     this.authService = authService;
@@ -13,9 +8,6 @@ export default class AuthController {
   /**
    * Register endpoint handler
    * POST /auth/register
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async register(req, res, next) {
     try {
@@ -45,9 +37,6 @@ export default class AuthController {
   /**
    * Login endpoint handler
    * POST /auth/login
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async login(req, res, next) {
     try {
@@ -72,9 +61,6 @@ export default class AuthController {
   /**
    * Get current user endpoint handler
    * GET /auth/me
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
    */
   async getCurrentUser(req, res, next) {
     try {

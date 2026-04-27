@@ -2,8 +2,7 @@ import multer from 'multer';
 import AppError from '../utils/AppError.js';
 
 /**
- * S3UploadMiddleware - uses memory storage so uploaded files are available
- * as buffers for direct upload to S3. Validates mime types and file size.
+ * S3UploadMiddleware - uses memory storage so uploaded files are available as buffers for direct upload to S3. Validates mime types and file size.
  */
 export default class S3UploadMiddleware {
   constructor(maxFileSize = 10 * 1024 * 1024) {

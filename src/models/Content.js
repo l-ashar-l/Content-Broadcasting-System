@@ -1,11 +1,7 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-/**
- * Content Model - Represents educational content
- * Follows SRP: Only defines content schema
- * Stores all content metadata and status information
- */
+
 const Content = sequelize.define(
   'Content',
   {

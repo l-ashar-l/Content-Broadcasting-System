@@ -323,16 +323,6 @@ import { Router } from 'express';
  *         description: Content not found
  */
 
-/**
- * createContentRoutes - Factory function to create content routes
- * Follows DIP: Routes depend on injected controllers and middleware
- * Follows SRP: Only responsible for route definitions
- * @param {ContentController} contentController - Injected content controller
- * @param {BroadcastController} broadcastController - Injected broadcast controller
- * @param {AuthMiddleware} authMiddleware - Injected auth middleware
- * @param {UploadMiddleware} uploadMiddleware - Injected upload middleware
- * @returns {Router} Express router
- */
 export function createContentRoutes(
   contentController,
   broadcastController,

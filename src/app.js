@@ -40,12 +40,6 @@ import { createApprovalRoutes } from './routes/approval.routes.js';
 
 dotenv.config();
 
-/**
- * Application Factory - Creates Express app with dependency injection
- * Follows OOP principles: All dependencies are injected
- * Follows DIP: High-level modules don't depend on low-level modules,
- *              both depend on abstractions (injected services)
- */
 class ApplicationFactory {
   constructor() {
     this.app = express();

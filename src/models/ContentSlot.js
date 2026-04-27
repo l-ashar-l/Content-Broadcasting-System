@@ -1,11 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
-/**
- * ContentSlot Model - Represents subject-based broadcast slots
- * Follows SRP: Only defines subject slot schema
- * Each subject can have multiple contents in rotation
- */
 const ContentSlot = sequelize.define(
   'ContentSlot',
   {

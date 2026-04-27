@@ -86,6 +86,13 @@ A production-ready, enterprise-grade backend system for distributing educational
    # File Upload
    MAX_FILE_SIZE=10485760
    UPLOAD_PATH=./uploads
+
+
+    # AWS S3 Configuration
+    AWS_ACCESS_KEY_ID=
+    AWS_SECRET_ACCESS_KEY=
+    AWS_REGION=ap-south-1
+    AWS_BUCKET_NAME=content-broadcast
    ```
 
 4. **Create Database**
