@@ -24,7 +24,8 @@ export default class RedisManager {
           host,
           port,
           tls: true,
-          reconnectStrategy: (retries) => Math.min(retries * 50, 500),
+          reconnectStrategy: () => false,
+          connectTimeout: 10000,
         },
         password: process.env.REDIS_PASSWORD || undefined,
       });
