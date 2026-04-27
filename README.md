@@ -1,231 +1,350 @@
 # Content Broadcasting System - Backend API
 
-A production-ready backend system for distributing educational content with approval workflows, intelligent scheduling, performance caching, and comprehensive analytics. Built with **Node.js, Express, PostgreSQL, Redis** following **SOLID principles** and **OOP design patterns**.
+Production-ready backend system for distributing educational content with approval workflows, intelligent scheduling, and analytics. Built with Node.js, Express, PostgreSQL, and Redis following SOLID principles.
 
-## 🎯 Core Features
+## 📚 Tech Stack
 
-- **Authentication & Authorization** - JWT-based with role-based access control (RBAC)
-- **Content Management** - Upload, approve, schedule educational content
-- **Broadcasting API** - Real-time content distribution to students
-- **Subject-Based Rotation** - Intelligent content scheduling with time windows
-- **Performance Optimization** - Redis caching for live content (5-min TTL)
-- **Rate Limiting** - Protection against API abuse with tiered rate limits
-- **Analytics & Tracking** - Real-time usage statistics, engagement metrics
-- **Clean Architecture** - SOLID principles, OOP patterns, dependency injection
-- **Docker Support** - Complete Docker Compose setup for dev and production
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Runtime** | Node.js 16+ | JavaScript execution |
+| **Framework** | Express.js | HTTP API server |
+| **Database** | PostgreSQL 12+ | Primary data store |
+| **Cache** | Redis 7+ | Performance optimization |
+| **Authentication** | JWT | Secure token-based auth |
+| **Password Security** | bcrypt | Password hashing (10 salt rounds) |
+| **ORM** | Sequelize | Database abstraction |
+| **File Upload** | Multer | Form data handling |
+| **File Storage** | AWS S3 | Cloud file storage |
+| **Rate Limiting** | express-rate-limit | API protection |
+| **Process Manager** | Nodemon | Development auto-reload |
 
-## 🏗️ Architecture
-
-```
-Express Application (DI Container)
-│
-├── Controllers (HTTP I/O)
-│   ├── AuthController
-│   ├── ContentController
-│   ├── ApprovalController
-│   ├── AnalyticsController
-│   └── BroadcastController
-│
-├── Services (Business Logic)
-│   ├── AuthService
-│   ├── ContentService
-│   ├── ApprovalService
-│   ├── AnalyticsService
-│   └── RotationService
-│
-├── Utilities (Managers)
-│   ├── JwtManager
-│   ├── PasswordManager
-│   ├── S3FileManager
-│   ├── RedisManager (Cache)
-│   └── Validators
-│
-├── Middleware (Cross-cutting)
-│   ├── Authentication
-│   ├── Authorization
-│   ├── Rate Limiting
-│   ├── Error Handling
-│   └── Request Logging
-│
-└── Database (PostgreSQL + Redis)
-    ├── Users
-    ├── Contents
-    ├── ContentSchedules
-    ├── Approvals
-    └── ContentUsage (Analytics)
-```
-
-## 🚀 Quick Start
+## 🚀 Setup Steps
 
 ### Prerequisites
-- Node.js 22+, PostgreSQL 12+, Docker & Docker Compose
+- Node.js 16+
+- PostgreSQL 12+
+- Redis 7+ (optional)
+- Docker & Docker Compose
 
 ### Installation
 
-1. **Clone & Install**
+1. **Clone Repository**
    ```bash
    git clone https://github.com/l-ashar-l/Content-Broadcasting-System.git
    cd Content-Broadcasting-System
+   ```
+
+2. **Install Dependencies**
+   ```bash
    npm install
    ```
 
-2. **Setup Environment**
+3. **Configure Environment**
    ```bash
    cp .env.example .env
    ```
+   
+   Edit `.env` with your values:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=content_broadcasting
+   DB_USER=postgres
+   DB_PASSWORD=your_password
+   JWT_SECRET=your_secret_key
+   JWT_EXPIRE=7d
+   PORT=8000
+   NODE_ENV=development
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   AWS_ACCESS_KEY_ID=your_key
+   AWS_SECRET_ACCESS_KEY=your_secret
+   AWS_REGION=ap-south-1
+   AWS_BUCKET_NAME=your_bucket
+   ```
 
-3. **Run with Docker**
+4. **Start with Docker Compose**
    ```bash
    docker-compose up -d
    ```
-
-4. **Access API**
-   - API: http://localhost:8000/api
+   
+   Services start:
+   - App: http://localhost:8000/api
+   - PostgreSQL: localhost:5432
+   - Redis: localhost:6379
    - Swagger Docs: http://localhost:8000/api-docs
 
-## ⚙️ Configuration
+5. **Local Development** (without Docker)
+   ```bash
+   npm run dev
+   ```
 
-### Environment Variables
-```env
-# Database
-DB_HOST=postgres
-DB_PORT=5432
-DB_NAME=content_broadcasting
-DB_USER=postgres
-DB_PASSWORD=password
-
-# Authentication
-JWT_SECRET=your_secret_key
-JWT_EXPIRE=7d
-
-# Server
-PORT=8000
-NODE_ENV=development
-
-# Caching
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-# File Upload
-MAX_FILE_SIZE=10485760
-UPLOAD_PATH=./uploads
-
-# AWS S3
-AWS_ACCESS_KEY_ID=your_key
-AWS_SECRET_ACCESS_KEY=your_secret
-AWS_REGION=ap-south-1
-AWS_BUCKET_NAME=content-broadcast
-```
-
-## 📊 Key Features Implemented
-
-### 1. Redis Caching
-- Caches live content endpoints (5-min TTL)
-- Improves performance for frequently accessed data
-- Graceful degradation if Redis unavailable
-- Cache keys: `live_content_{teacherId}`, `live_content_{teacherId}_{subject}`
-
-### 2. Rate Limiting
-- **Public API**: 10 req/15 min per IP
-- **Auth Endpoints**: 5 req/15 min per IP
-- **Upload**: 20 req/hour per user
-- **Analytics**: 30 req/hour per IP
-
-### 3. Analytics System
-Five analytics endpoints for usage tracking:
-- `POST /api/analytics/usage` - Record content usage (public)
-- `GET /api/analytics/subjects/most-active` - Top subjects by usage
-- `GET /api/analytics/subjects` - All subject statistics
-- `GET /api/analytics/content/:id/usage` - Per-content statistics
-- `GET /api/analytics/trend` - Usage trends over time
-
-Tracks three action types: **view**, **download**, **share**
-
-## 🐳 Docker Commands
-
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f app
-
-# Access database shell
-docker-compose exec postgres psql -U postgres -d content_broadcasting
-
-# Access Redis CLI
-docker-compose exec redis redis-cli
-
-# Stop all services
-docker-compose down
-
-# Clean slate (remove volumes)
-docker-compose down -v
-```
-
-## 📁 Project Structure
+## 🔄 Content Lifecycle
 
 ```
-src/
-├── models/                 (Sequelize ORM models)
-│   ├── User.js
-│   ├── Content.js
-│   ├── ContentUsage.js     (✨ NEW - Analytics)
-│   └── ...
-├── services/               (Business logic)
-│   ├── AuthService.js
-│   ├── AnalyticsService.js (✨ NEW - Analytics)
-│   └── ...
-├── controllers/            (HTTP handlers)
-│   ├── AuthController.js
-│   ├── AnalyticsController.js (✨ NEW - Analytics)
-│   └── ...
-├── routes/                 (API endpoints)
-│   ├── auth.routes.js
-│   ├── analytics.routes.js (✨ NEW - Analytics)
-│   └── ...
-├── middlewares/            (Express middleware)
-│   ├── auth.middleware.js
-│   ├── rate-limit.middleware.js (✨ NEW)
-│   └── error.middleware.js
-├── utils/                  (Utility managers)
-│   ├── JwtManager.js
-│   ├── RedisManager.js     (✨ NEW)
-│   └── ...
-└── app.js                  (Application factory)
+Upload → Pending → [Approved / Rejected]
+                        ↓
+                   Check Time Window
+                   Check Rotation
+                        ↓
+                   Live Content
+                        ↓
+                   Students Access
 ```
 
-## 🔐 API Security
+**Stages:**
+1. **Upload**: Teacher uploads content (status: pending)
+2. **Approval**: Principal reviews and approves/rejects
+3. **Scheduling**: Content available within time window
+4. **Broadcasting**: Content rotates and displays to students
+5. **Access**: Students view/download/share content
 
-- **RBAC**: Two roles - `principal` (admin), `teacher` (user)
-- **JWT Tokens**: 7-day expiration, secure storage required
-- **Rate Limiting**: Protects against brute force and abuse
-- **Input Validation**: All inputs validated before processing
-- **CORS**: Configurable CORS policies
-- **Error Handling**: Sanitized error messages in production
+## 📅 Scheduling & Rotation Logic
 
-## 📝 Documentation
+### Time Window
+Teachers define visibility period:
+- **start_time**: When content becomes visible
+- **end_time**: When content stops being visible
 
-- **Swagger UI**: Available at `/api-docs`
-- **Architecture Notes**: See `architecture-notes.txt`
-- **Implementation Guide**: Features documented inline
+Only approved content within active time window is broadcast.
 
-## 🛠️ Development
+### Content Rotation
+Multiple approved contents rotate in subject slots:
+- **rotation_duration**: Minutes each content displays (default: 5)
+- Cycle repeats continuously until end_time
 
-```bash
-# Run locally (requires PostgreSQL & Redis)
-npm run dev
-
-# Run production build
-npm start
-
-# Run tests (when available)
-npm test
+**Example Rotation:**
+```
+Subject: Mathematics
+├── Content A: 5 minutes
+├── Content B: 3 minutes  
+└── Content C: 5 minutes
+Total cycle: 13 minutes → repeats
 ```
 
-## 📄 License
+**Query Logic:**
+1. Fetch approved content for teacher
+2. Filter by subject
+3. Check if current time within time window
+4. Calculate which content should display (based on rotation_duration)
+5. Return current content + next content in queue
 
-Proprietary - Content Broadcasting System
+## 📖 API Usage
+
+### Authentication
+
+#### Register
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Teacher",
+  "email": "john@school.edu",
+  "password": "secure_password",
+  "role": "teacher"
+}
+
+Response: 201 Created
+{
+  "success": true,
+  "data": { "id": 1, "name": "John Teacher", "email": "john@school.edu", "role": "teacher" }
+}
+```
+
+#### Login
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@school.edu",
+  "password": "secure_password"
+}
+
+Response: 200 OK
+{
+  "success": true,
+  "data": { "user": {...}, "token": "eyJhbGciOiJIUzI1NiIs..." }
+}
+```
+
+### Content Management
+
+#### Upload Content
+```http
+POST /api/content/upload
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+file: <binary>
+title: "Math Final Exam"
+subject: "Maths"
+start_time: "2025-04-26T10:00:00Z"
+end_time: "2025-04-26T12:00:00Z"
+rotation_duration: 5
+
+Response: 201 Created
+{
+  "success": true,
+  "data": { "id": 1, "title": "Math Final Exam", "status": "pending", "subject": "Maths" }
+}
+```
+
+#### Get My Content (Teacher)
+```http
+GET /api/content/teacher/my-content?page=1&limit=10
+Authorization: Bearer <token>
+
+Response: 200 OK
+{
+  "success": true,
+  "data": [...],
+  "pagination": { "total": 5, "page": 1, "limit": 10, "pages": 1 }
+}
+```
+
+#### Get Pending Content (Principal)
+```http
+GET /api/content/pending?page=1&limit=10
+Authorization: Bearer <principal_token>
+
+Response: 200 OK
+{
+  "success": true,
+  "data": [...]
+}
+```
+
+#### Get Live Content (Public)
+```http
+GET /api/content/live/:teacherId
+
+Response: 200 OK
+{
+  "success": true,
+  "data": {
+    "Maths": { "id": 1, "title": "Question Paper", "file_path": "..." },
+    "Science": { "id": 2, "title": "Lab Manual", "file_path": "..." }
+  }
+}
+```
+
+### Approval Management
+
+#### Approve Content
+```http
+POST /api/approval/approve/:contentId
+Authorization: Bearer <principal_token>
+
+Response: 200 OK
+{
+  "success": true,
+  "data": { "id": 1, "status": "approved", "approved_at": "2025-04-26T10:30:00Z" }
+}
+```
+
+#### Reject Content
+```http
+POST /api/approval/reject/:contentId
+Authorization: Bearer <principal_token>
+Content-Type: application/json
+
+{
+  "reason": "Image quality is poor"
+}
+
+Response: 200 OK
+{
+  "success": true,
+  "data": { "id": 1, "status": "rejected", "rejection_reason": "Image quality is poor" }
+}
+```
+
+### Analytics
+
+#### Record Usage
+```http
+POST /api/analytics/usage
+Content-Type: application/json
+
+{
+  "contentId": 1,
+  "action": "view"
+}
+
+Response: 201 Created
+{
+  "success": true,
+  "data": { "id": 100, "content_id": 1, "action": "view" }
+}
+```
+
+#### Get Most Active Subjects
+```http
+GET /api/analytics/subjects/most-active?limit=5
+Authorization: Bearer <token>
+
+Response: 200 OK
+{
+  "success": true,
+  "data": [
+    { "subject": "Maths", "usage_count": 150, "views": 120, "downloads": 25, "shares": 5 },
+    { "subject": "Science", "usage_count": 100, "views": 80, "downloads": 15, "shares": 5 }
+  ]
+}
+```
+
+#### Get Subject Analytics
+```http
+GET /api/analytics/subjects
+Authorization: Bearer <token>
+
+Response: 200 OK
+{
+  "success": true,
+  "data": [
+    { "subject": "Maths", "total_content": 10, "total_usage": 150, "active_users": 45, "last_access": "2025-04-26T12:00:00Z" }
+  ]
+}
+```
+
+## 🛡️ Security Features
+
+- **JWT Authentication** - Stateless, 7-day expiration tokens
+- **bcrypt Password Hashing** - 10 salt rounds minimum
+- **Role-Based Access Control** - `principal` (admin) and `teacher` (user) roles
+- **Input Validation** - All inputs validated before processing
+- **SQL Injection Prevention** - Parameterized queries via Sequelize
+- **Rate Limiting** - Tiered limits per endpoint type (5-30 req/hour)
+- **CORS Protection** - Configurable cross-origin policies
+- **Error Handling** - Sanitized error messages, no sensitive data leakage
+- **File Type Validation** - Whitelist allowed upload formats
+- **Environment Secrets** - Never hardcoded, loaded from `.env`
+
+## 📝 Limitations & Assumptions
+
+### Limitations
+1. **Single Database Instance** - No sharding/replication by default
+2. **In-Memory Rate Limiting** - Uses memory store, not distributed (single instance only)
+3. **Local/S3 File Storage** - No other cloud providers supported
+4. **No WebSocket Support** - HTTP polling only, no real-time notifications
+5. **Predefined Subjects** - Fixed subject list, not dynamic
+6. **No Email Notifications** - Content approval/rejection not emailed
+7. **No Content Versioning** - Only latest version maintained
+8. **Single Teacher per Content** - Cannot have multiple uploaders
+
+### Assumptions
+1. **Subjects are predefined** - Teachers select from existing list
+2. **One principal per school** - Role-based, not organization-based
+3. **Content files stored externally** - Database stores only paths
+4. **Rotation happens server-side** - Client doesn't calculate rotation
+5. **No real-time sync needed** - Polling acceptable for live content
+6. **Users manage own content** - No content delegation workflow
+7. **Timestamps in UTC** - All dates stored in UTC timezone
+8. **Content approved instantly** - No multi-level approval workflow
+9. **IP address tracking** - Not anonymized for analytics
+10. **PostgreSQL as primary DB** - ORM tied to SQL databases
    ```
 
 5. **Start Development Server**
@@ -612,7 +731,7 @@ All errors follow standard format:
 5. **No Email Notifications** - Can be added later
 6. **Basic Rate Limiting** - Can be enhanced with Redis
 
-## 🔄 Optional Features (Bonus)
+## 🔄 Bonus Features
 
 - 🔲 Redis Caching for `/content/live` API
 - 🔲 Rate Limiting (express-rate-limit)
