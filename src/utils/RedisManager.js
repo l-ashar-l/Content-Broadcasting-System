@@ -23,7 +23,6 @@ export default class RedisManager {
           port,
           reconnectStrategy: (retries) => Math.min(retries * 50, 500),
         },
-        password: process.env.REDIS_PASSWORD,
       });
 
       this.client.on('error', (err) => {
