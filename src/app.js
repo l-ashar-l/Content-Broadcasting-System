@@ -17,10 +17,7 @@ import { User, Content, ContentSlot, ContentSchedule } from './models/index.js';
 import AuthMiddleware from './middlewares/auth.middleware.js';
 import S3UploadMiddleware from './middlewares/s3upload.middleware.js';
 import {
-  publicApiLimiter,
-  authLimiter,
-  uploadLimiter,
-  analyticsLimiter,
+  contentLiveLimiter,
 } from './middlewares/rate-limit.middleware.js';
 
 // Manager classes
@@ -67,8 +64,6 @@ class ApplicationFactory {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(RequestLogger.log);
-    // Apply rate limiting to public API endpoints
-    this.app.use('/api/', publicApiLimiter);
   }
 
   /**
@@ -133,7 +128,8 @@ class ApplicationFactory {
         this.contentController,
         this.broadcastController,
         this.authMiddleware,
-        this.uploadMiddleware
+        this.uploadMiddleware,
+        contentLiveLimiter
       )
     );
 
@@ -146,8 +142,7 @@ class ApplicationFactory {
       '/api/analytics',
       createAnalyticsRoutes(
         this.analyticsController,
-        this.authMiddleware,
-        analyticsLimiter
+        this.authMiddleware
       )
     );
 

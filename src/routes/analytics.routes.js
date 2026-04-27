@@ -125,11 +125,11 @@ import { Router } from 'express';
  *         description: Unauthorized
  */
 
-export function createAnalyticsRoutes(analyticsController, authMiddleware, analyticsLimiter) {
+export function createAnalyticsRoutes(analyticsController, authMiddleware) {
   const router = Router();
 
-  // Public endpoint - rate limited
-  router.post('/usage', analyticsLimiter, (req, res, next) =>
+  // Public endpoint
+  router.post('/usage', (req, res, next) =>
     analyticsController.recordUsage(req, res, next)
   );
 

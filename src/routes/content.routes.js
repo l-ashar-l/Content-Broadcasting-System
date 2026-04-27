@@ -327,7 +327,8 @@ export function createContentRoutes(
   contentController,
   broadcastController,
   authMiddleware,
-  uploadMiddleware
+  uploadMiddleware,
+  contentLiveLimiter
 ) {
   const router = Router();
 
@@ -361,11 +362,13 @@ export function createContentRoutes(
 
   router.get(
     '/live/:teacherId',
+    contentLiveLimiter,
     (req, res, next) => broadcastController.getLiveContent(req, res, next)
   );
 
   router.get(
     '/live/:teacherId/subject/:subject',
+    contentLiveLimiter,
     (req, res, next) => broadcastController.getLiveContentBySubject(req, res, next)
   );
 
