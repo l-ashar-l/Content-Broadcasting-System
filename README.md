@@ -24,7 +24,7 @@ Production-ready backend system for distributing educational content with approv
 ## 🚀 Setup Steps
 
 ### Prerequisites
-- Node.js 16+
+- Node.js 22+
 - PostgreSQL 12+
 - Redis 7+ (optional)
 - Docker & Docker Compose
