@@ -18,12 +18,14 @@ export default class RedisManager {
   async connect(host = process.env.REDIS_HOST || 'localhost', port = process.env.REDIS_PORT || 6379) {
     try {
       this.client = createClient({
+        username: "default",
+        password: process.env.REDIS_PASSWORD,
         socket: {
           host,
           port,
-          tls: true,
           reconnectStrategy: (retries) => Math.min(retries * 50, 500),
         },
+        password: process.env.REDIS_PASSWORD || undefined,
       });
 
       this.client.on('error', (err) => {
