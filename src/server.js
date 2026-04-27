@@ -1,15 +1,20 @@
 import dotenv from 'dotenv';
 import appFactory from './app.js';
+import databaseInitializer from './config/createDatabase.js';
 
 dotenv.config();
 
 async function startServer() {
   try {
-    const port = process.env.PORT || 5000;
+    const port = process.env.PORT || 8000;
+    await databaseInitializer.createDatabaseIfNotExists();
     const app = appFactory.getApp();
 
     // Initialize database
     await appFactory.initializeDatabase();
+
+    // Initialize Redis
+    await appFactory.initializeRedis();
 
     // Start server
     app.listen(port, () => {

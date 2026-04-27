@@ -353,11 +353,11 @@ UPLOAD FLOW:
 └──────────┬───────────────────────────┘
            │
            ▼
-┌──────────────────────────────────────┐
-│ Multer generates filename            │
-│ Format: {timestamp}-{random}.{ext}   │
-│ Stored in: ./uploads/                │
-└──────────┬───────────────────────────┘
+┌──────────────────────────────────────────┐
+│ Multer generates filename                │
+│ Format: {timestamp}-{random}.{extension} │
+│ Stored in: S3 bucket                     │
+└──────────┬───────────────────────────────┘
            │
            ▼
 ┌──────────────────────────────────────┐

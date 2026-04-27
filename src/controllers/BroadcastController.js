@@ -2,8 +2,9 @@ import ResponseFormatter from '../utils/ResponseFormatter.js';
 import { s3StorageManager } from '../utils/s3singletons.js';
 
 export default class BroadcastController {
-  constructor(rotationService) {
+  constructor(rotationService, redisManager = null) {
     this.rotationService = rotationService;
+    this.redisManager = redisManager;
   }
 
   /**
@@ -11,10 +12,27 @@ export default class BroadcastController {
    * GET /content/live/:teacherId
    * Public API endpoint - No authentication required
    * Returns currently active content based on rotation schedule
+   * Cached for 5 minutes (300 seconds)
    */
   async getLiveContent(req, res, next) {
     try {
       const { teacherId } = req.params;
+      const cacheKey = `live_content_${teacherId}`;
+
+      // Try to get from cache
+      if (this.redisManager && this.redisManager.isConnected()) {
+        const cachedData = await this.redisManager.get(cacheKey);
+        if (cachedData) {
+          return res
+            .status(200)
+            .json(
+              ResponseFormatter.success(
+                cachedData,
+                'Live content retrieved from cache'
+              )
+            );
+        }
+      }
 
       const activeContents = await this.rotationService.getLiveContent(teacherId);
 
@@ -45,6 +63,11 @@ export default class BroadcastController {
         })
       );
 
+      // Cache for 5 minutes
+      if (this.redisManager && this.redisManager.isConnected()) {
+        await this.redisManager.set(cacheKey, contentsWithUrls, 300);
+      }
+
       res
         .status(200)
         .json(
@@ -62,10 +85,27 @@ export default class BroadcastController {
    * Get live content for specific subject endpoint handler
    * GET /content/live/:teacherId/subject/:subject
    * Public API endpoint - No authentication required
+   * Cached for 5 minutes (300 seconds)
    */
   async getLiveContentBySubject(req, res, next) {
     try {
       const { teacherId, subject } = req.params;
+      const cacheKey = `live_content_${teacherId}_${subject}`;
+
+      // Try to get from cache
+      if (this.redisManager && this.redisManager.isConnected()) {
+        const cachedData = await this.redisManager.get(cacheKey);
+        if (cachedData) {
+          return res
+            .status(200)
+            .json(
+              ResponseFormatter.success(
+                cachedData,
+                'Live content retrieved from cache'
+              )
+            );
+        }
+      }
 
       const activeContent = await this.rotationService.getActiveContentBySubject(
         teacherId,
@@ -94,6 +134,11 @@ export default class BroadcastController {
         url_expires_in: 3600,
         url_expires_at: downloadUrl ? new Date(Date.now() + 3600 * 1000).toISOString() : null,
       };
+
+      // Cache for 5 minutes
+      if (this.redisManager && this.redisManager.isConnected()) {
+        await this.redisManager.set(cacheKey, contentData, 300);
+      }
 
       res
         .status(200)
