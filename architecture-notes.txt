@@ -1,22 +1,28 @@
 ================================================================================
-                    ARCHITECTURE NOTES
+                    ARCHITECTURE NOTES - UPDATED
             Content Broadcasting System - Backend Architecture
 ================================================================================
 
 1. OVERVIEW
 -----------
-This is a production-ready, enterprise-grade backend system following SOLID 
-principles and Object-Oriented Programming (OOP) patterns. The architecture 
-emphasizes clean code, maintainability, scalability, and testability.
+Production-ready backend following SOLID principles and OOP patterns.
+Emphasizes clean code, maintainability, scalability, and testability.
 
 Technology Stack:
   - Runtime: Node.js (ES6+ Modules)
   - Framework: Express.js
   - Database: PostgreSQL with Sequelize ORM
+  - Cache: Redis (optional, graceful degradation)
   - Authentication: JWT (JSON Web Tokens)
   - Password Security: bcrypt
-  - File Upload: Multer
+  - File Upload: Multer with AWS S3 support
+  - Rate Limiting: express-rate-limit
   - Process Manager: Nodemon (development)
+
+Recent Additions:
+  ✨ Redis caching for performance optimization
+  ✨ Multi-tier rate limiting for API protection
+  ✨ Analytics system with usage tracking
 
 ================================================================================
 
@@ -26,78 +32,438 @@ Technology Stack:
 A. SOLID PRINCIPLES IMPLEMENTATION:
 
    1. Single Responsibility Principle (SRP)
-      - Each class has ONE reason to change
-      - Managers handle specific tasks (JWT, Passwords, Files)
-      - Services contain business logic
-      - Controllers handle HTTP I/O
-      - Models define data structures
+      Each class has ONE reason to change.
       
-      Example:
+      Examples:
         ✓ JwtManager: ONLY JWT operations
         ✓ PasswordManager: ONLY password hashing/comparison
+        ✓ RedisManager: ONLY cache operations
         ✓ AuthService: ONLY authentication business logic
+        ✓ AnalyticsService: ONLY analytics queries and aggregation
         ✓ AuthController: ONLY HTTP request/response handling
+        ✓ AnalyticsController: ONLY analytics endpoint handling
 
    2. Open/Closed Principle (OCP)
-      - Open for extension, closed for modification
-      - Services can be extended without modifying existing code
-      - Middleware can be chained for cross-cutting concerns
-      - Storage strategies can be swapped (local/S3)
+      Open for extension, closed for modification.
       
-      Example:
-        ✓ UploadMiddleware can be extended to support S3
-        ✓ New services can be added without modifying routes
-        ✓ New validators can be added to Validator class
+      Examples:
+        ✓ Services can be extended without modifying existing code
+        ✓ Middleware can be chained without changing core logic
+        ✓ Storage strategies swappable (local/S3)
+        ✓ New analytics endpoints added without modifying old ones
+        ✓ Rate limiters configurable per endpoint
 
    3. Liskov Substitution Principle (LSP)
-      - Subtypes must be substitutable for their base types
-      - All middleware implementations follow Express middleware signature
-      - All services implement consistent interfaces
+      Subtypes substitutable for their base types.
       
-      Example:
+      Examples:
+        ✓ All middleware follows Express middleware signature
+        ✓ All services implement consistent patterns
         ✓ Any storage manager can replace FileManager
-        ✓ Controllers follow consistent request/response patterns
+        ✓ Cache layer is swappable (Redis or no-op)
 
    4. Interface Segregation Principle (ISP)
-      - Classes depend on specific interfaces, not general ones
-      - UploadMiddleware depends on file validation, not entire file system
-      - Each service has focused responsibility
+      Classes depend on specific interfaces, not general ones.
       
-      Example:
-        ✓ AuthMiddleware only provides auth-related methods
-        ✓ ContentService only handles content operations
+      Examples:
+        ✓ AuthMiddleware only provides auth methods
+        ✓ AnalyticsService only handles analytics operations
+        ✓ RedisManager only exposes cache operations
+        ✓ Controllers have focused responsibilities
 
    5. Dependency Inversion Principle (DIP)
-      - Depend on abstractions, not concrete implementations
-      - All dependencies are injected at initialization
-      - Services don't create their own dependencies
+      Depend on abstractions, not concrete implementations.
       
-      Example:
-        ✓ AuthService depends on PasswordManager interface
-        ✓ Routes depend on injected controllers
-        ✓ Controllers depend on injected services
+      Examples:
+        ✓ All dependencies injected in ApplicationFactory
+        ✓ Controllers don't instantiate services
+        ✓ Services don't create their own dependencies
+        ✓ RedisManager injected into BroadcastController
+        ✓ Rate limiters injected into route factories
 
 B. DESIGN PATTERNS:
 
    1. Dependency Injection (DI)
-      - All dependencies injected at application startup
-      - Location: ApplicationFactory.initializeDependencies()
-      - Benefits: Easy testing, loose coupling, flexibility
+      All dependencies injected at application startup.
+      Location: ApplicationFactory.initializeDependencies()
       
+      Benefits: Easy testing, loose coupling, flexibility
+      
+      Injected Components:
+        - Managers (JWT, Password, S3, Redis)
+        - Services (Auth, Content, Approval, Analytics, Rotation)
+        - Controllers (Auth, Content, Approval, Analytics, Broadcast)
+        - Middleware (Auth, Upload, Rate Limiting)
+
    2. Factory Pattern
-      - ApplicationFactory creates and configures entire app
-      - Route factories create router instances with dependencies
-      - Centralizes object creation logic
+      ApplicationFactory creates and configures entire app.
+      Route factories create router instances with dependencies.
+      Centralizes object creation logic.
       
+      Examples:
+        ✓ ApplicationFactory.initializeApp()
+        ✓ createAuthRoutes(controller, middleware)
+        ✓ createAnalyticsRoutes(controller, middleware, rateLimiter)
+
    3. Service Layer Pattern
-      - Business logic separated from HTTP concerns
-      - Services are reusable and testable
-      - Controllers delegate to services
+      Business logic separated from HTTP concerns.
+      Services are reusable and testable.
+      Controllers delegate to services.
       
+      Services:
+        - AuthService (login, register, token refresh)
+        - ContentService (CRUD, scheduling)
+        - ApprovalService (approval workflows)
+        - AnalyticsService (usage tracking, statistics)
+        - RotationService (content scheduling logic)
+
    4. Middleware Chain Pattern
-      - Express middleware for cross-cutting concerns
-      - Authentication, logging, error handling
-      - Can be easily added/removed without changing core logic
+      Express middleware for cross-cutting concerns.
+      Authentication, logging, error handling, rate limiting.
+      Can be easily added/removed without changing core logic.
+      
+      Middleware:
+        - RequestLogger (logs all requests)
+        - CORS (cross-origin configuration)
+        - ErrorHandler (centralized error handling)
+        - AuthMiddleware (JWT verification, role checking)
+        - RateLimiters (tiered rate limiting)
+        - S3UploadMiddleware (file validation)
+
+   5. Singleton Pattern
+      RedisManager maintains single Redis connection.
+      Prevents connection pooling issues.
+      Graceful fallback if Redis unavailable.
+
+   6. Observer/Event Pattern
+      Redis client events (connect, error, disconnect).
+      Ensures proper connection state management.
+
+================================================================================
+
+3. LAYERED ARCHITECTURE
+-----------------------
+
+┌─────────────────────────────────────────────────────────────┐
+│                    HTTP Layer (Routes)                      │
+│  /auth, /content, /approval, /analytics, /broadcast         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│               Controller Layer (Request Handling)           │
+│  AuthController, ContentController, AnalyticsController     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│             Service Layer (Business Logic)                  │
+│  AuthService, ContentService, AnalyticsService              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│            Utility/Manager Layer (Infrastructure)           │
+│  JwtManager, PasswordManager, RedisManager, S3Manager       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│        Data Access Layer (ORM + Cache + Database)           │
+│  Sequelize Models + Redis Cache + PostgreSQL               │
+└─────────────────────────────────────────────────────────────┘
+
+================================================================================
+
+4. FEATURE IMPLEMENTATIONS
+--------------------------
+
+A. REDIS CACHING (✨ NEW)
+   
+   Location: src/utils/RedisManager.js
+   
+   Purpose:
+     - Improve response time for frequently accessed data
+     - Reduce database load
+     - Support high-traffic scenarios
+   
+   Implementation:
+     - Singleton RedisManager maintains single connection
+     - BroadcastController caches live content endpoints
+     - 5-minute TTL for cached live content
+     - Graceful degradation if Redis unavailable
+   
+   Cache Keys:
+     live_content_{teacherId}
+     live_content_{teacherId}_{subject}
+   
+   Configuration:
+     REDIS_HOST=redis (Docker service name)
+     REDIS_PORT=6379
+   
+   Usage Pattern:
+     1. Check cache for key
+     2. If hit, return cached data
+     3. If miss, fetch from DB
+     4. Cache result with TTL
+     5. Return to client
+   
+   Endpoints Cached:
+     GET /api/content/live/:teacherId
+     GET /api/content/live/:teacherId/subject/:subject
+
+B. MULTI-TIER RATE LIMITING (✨ NEW)
+   
+   Location: src/middlewares/rate-limit.middleware.js
+   
+   Purpose:
+     - Protect APIs from abuse and brute force attacks
+     - Ensure fair usage across users
+     - Prevent DDoS and resource exhaustion
+   
+   Implementation:
+     Four configurable limiters based on endpoint type:
+     
+     1. publicApiLimiter
+        - Limit: 10 requests per 15 minutes
+        - Applied to: All /api/* endpoints
+        - Skips: Authenticated requests
+     
+     2. authLimiter
+        - Limit: 5 requests per 15 minutes
+        - Applied to: /api/auth/login, /api/auth/register
+        - Purpose: Prevent brute force attacks
+     
+     3. uploadLimiter
+        - Limit: 20 requests per hour
+        - Applied to: /api/content/upload
+        - Rate by: User ID (if authenticated) or IP
+     
+     4. analyticsLimiter
+        - Limit: 30 requests per hour
+        - Applied to: /api/analytics/*
+        - Rate by: IP address
+   
+   Response Headers:
+     RateLimit-Limit: total allowed requests
+     RateLimit-Remaining: requests left in window
+     RateLimit-Reset: Unix timestamp when limit resets
+   
+   Error Response (429 Too Many Requests):
+     {
+       "success": false,
+       "statusCode": 429,
+       "message": "Too many requests, please try again later"
+     }
+
+C. ANALYTICS SYSTEM (✨ NEW)
+   
+   Location: 
+     - src/models/ContentUsage.js (data model)
+     - src/services/AnalyticsService.js (business logic)
+     - src/controllers/AnalyticsController.js (HTTP handlers)
+     - src/routes/analytics.routes.js (API endpoints)
+   
+   Purpose:
+     - Track content usage and engagement metrics
+     - Provide insights into subject popularity
+     - Monitor user behavior patterns
+   
+   Data Model (content_usages table):
+     - id (PK): Unique usage record ID
+     - content_id (FK): Reference to content
+     - action (ENUM): view | download | share
+     - user_id (FK, nullable): Reference to user
+     - ip_address: Client IP address
+     - created_at: Timestamp of action
+   
+   Endpoints:
+     
+     1. POST /api/analytics/usage (PUBLIC)
+        Purpose: Record a usage event
+        Rate Limit: 30 req/hour
+        Auth: None required
+        Validation: Content must exist
+        
+        Request:
+          { "contentId": 1, "action": "view" }
+        
+        Response:
+          { "success": true, "data": { usage record } }
+     
+     2. GET /api/analytics/subjects/most-active (PROTECTED)
+        Purpose: Get top N subjects by usage count
+        Rate Limit: 30 req/hour
+        Auth: JWT required
+        Query Params: limit (default: 5)
+        
+        Returns: List of subjects with view/download/share counts
+     
+     3. GET /api/analytics/subjects (PROTECTED)
+        Purpose: Get analytics for all subjects
+        Rate Limit: 30 req/hour
+        Auth: JWT required
+        
+        Returns: Each subject's: total content, total usage, views, 
+                 downloads, active users, last access timestamp
+     
+     4. GET /api/analytics/content/:id/usage (PROTECTED)
+        Purpose: Get detailed stats for specific content
+        Rate Limit: 30 req/hour
+        Auth: JWT required
+        
+        Returns: Content info + statistics + recent usage (10 most recent)
+     
+     5. GET /api/analytics/trend (PROTECTED)
+        Purpose: Get usage trends over time
+        Rate Limit: 30 req/hour
+        Auth: JWT required
+        Query Params: contentId, subject, days (default: 7)
+        
+        Returns: Daily breakdown of views, downloads, unique users
+   
+   Query Strategy:
+     - Uses raw SQL for complex aggregations (better performance)
+     - Handles NULL joins gracefully (LEFT JOINs)
+     - Parameterized queries to prevent SQL injection
+     - Proper table name quoting ("contents", "content_usages")
+
+================================================================================
+
+5. DATABASE SCHEMA
+------------------
+
+New Table: content_usages
+  Column           | Type         | Constraints
+  ─────────────────┼──────────────┼─────────────────────────
+  id               | INTEGER      | PK, AUTO INCREMENT
+  content_id       | INTEGER      | FK → contents(id), NOT NULL
+  action           | ENUM         | view/download/share, NOT NULL
+  user_id          | INTEGER      | FK → users(id), NULL
+  ip_address       | VARCHAR(255) | NULL
+  created_at       | TIMESTAMP    | DEFAULT NOW()
+  
+  Indexes:
+    - Primary key on id
+    - Foreign key on content_id
+    - Foreign key on user_id
+
+Relationships:
+  - Content.hasMany(ContentUsage)
+  - ContentUsage.belongsTo(Content)
+  - User.hasMany(ContentUsage)
+  - ContentUsage.belongsTo(User)
+
+================================================================================
+
+6. ERROR HANDLING & VALIDATION
+------------------------------
+
+Error Handling:
+  - Centralized in ErrorHandler middleware
+  - Custom AppError class for application errors
+  - Database errors caught and sanitized
+  - Validation errors with detailed messages
+  - 500 errors log full details, client gets generic message
+  
+Error Response Format:
+  {
+    "success": false,
+    "statusCode": 400,
+    "message": "Error message",
+    "errors": [ "details" ]
+  }
+
+Input Validation:
+  - Validator utility class with reusable rules
+  - Request body validation before processing
+  - ContentId validation for analytics (checks existence)
+  - Query parameter validation (types, ranges)
+  - Rate limit on public endpoints
+  
+Validation Examples:
+  - recordUsage: Validates content exists before creating usage record
+  - getMostActiveSubjects: Validates limit is positive integer
+  - getUsageTrend: Validates days is valid number
+
+================================================================================
+
+7. PERFORMANCE CONSIDERATIONS
+-----------------------------
+
+Caching Strategy:
+  - Redis for frequently accessed live content (5-min TTL)
+  - Database connection pooling via Sequelize
+  - Lazy loading of relationships where appropriate
+  
+Query Optimization:
+  - Use of DISTINCT in COUNT queries to avoid duplicates
+  - LEFT JOINs for optional relationships
+  - Parameterized queries to leverage query planning
+  - Indexes on foreign keys and high-cardinality columns
+  
+Rate Limiting:
+  - Prevents resource exhaustion
+  - Configurable per endpoint type
+  - Distributed memory store support (for multi-instance)
+  
+Logging:
+  - RequestLogger middleware logs all API calls
+  - Error logging captures stack traces
+  - Production: Logs to file for analysis
+
+================================================================================
+
+8. SECURITY MEASURES
+--------------------
+
+Authentication:
+  - JWT tokens with 7-day expiration
+  - Secure password hashing with bcrypt
+  - Token verification on protected endpoints
+  
+Authorization:
+  - Role-based access control (RBAC)
+  - Principal (admin) vs Teacher (user) roles
+  - Endpoint-level role checking
+  
+Input Security:
+  - All inputs validated before processing
+  - SQL injection prevented via parameterized queries
+  - File type validation on uploads
+  
+Rate Limiting:
+  - Brute force protection on auth endpoints (5 req/15 min)
+  - DDoS protection on public endpoints (10 req/15 min)
+  - User-based rate limiting for uploads
+  
+CORS:
+  - Configurable cross-origin policies
+  - Prevents unauthorized cross-origin requests
+  
+Error Messages:
+  - Sanitized in production to prevent information leakage
+  - Internal errors logged with full details
+  - Clients receive generic error messages
+
+================================================================================
+
+9. DEPLOYMENT NOTES
+-------------------
+
+Docker Setup:
+  - Multi-container setup: App, PostgreSQL, Redis
+  - Volume mounts for code hot-reload (development)
+  - Health checks for all services
+  - Service dependencies properly configured
+  
+Environment Configuration:
+  - Development: Hot-reload, verbose logging
+  - Production: NODE_ENV=production, strong secrets
+  
+Scaling Considerations:
+  - Stateless design (except Redis)
+  - Can run multiple app instances behind load balancer
+  - Redis enables caching across instances
+  - Database connection pooling prevents exhaustion
+
+================================================================================
       
    5. Repository Pattern
       - Models act as repositories for data access

@@ -1,103 +1,231 @@
 # Content Broadcasting System - Backend API
 
-A production-ready, enterprise-grade backend system for distributing educational content to students with approval workflows and intelligent scheduling. Built with **Node.js, Express, PostgreSQL** and following **SOLID principles** and **OOP design patterns**.
+A production-ready backend system for distributing educational content with approval workflows, intelligent scheduling, performance caching, and comprehensive analytics. Built with **Node.js, Express, PostgreSQL, Redis** following **SOLID principles** and **OOP design patterns**.
 
-## 🌟 Features
+## 🎯 Core Features
 
-- ✅ **JWT-based Authentication** with role-based access control (RBAC)
-- ✅ **Content Upload System** with file validation (JPG, PNG, GIF)
-- ✅ **Approval Workflow** for content moderation by principals
-- ✅ **Subject-Based Scheduling** with intelligent content rotation
-- ✅ **Public Broadcasting API** for students to access live content
-- ✅ **Time-Window Scheduling** - Teachers define when content is visible
-- ✅ **Clean Architecture** following SOLID principles and OOP patterns
-- ✅ **Error Handling** with custom error classes and middleware
-- ✅ **Input Validation** with comprehensive validators
-- ✅ **Dependency Injection** for testability and flexibility
+- **Authentication & Authorization** - JWT-based with role-based access control (RBAC)
+- **Content Management** - Upload, approve, schedule educational content
+- **Broadcasting API** - Real-time content distribution to students
+- **Subject-Based Rotation** - Intelligent content scheduling with time windows
+- **Performance Optimization** - Redis caching for live content (5-min TTL)
+- **Rate Limiting** - Protection against API abuse with tiered rate limits
+- **Analytics & Tracking** - Real-time usage statistics, engagement metrics
+- **Clean Architecture** - SOLID principles, OOP patterns, dependency injection
+- **Docker Support** - Complete Docker Compose setup for dev and production
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│           Express Application Factory               │
-│    (Dependency Injection & Service Setup)           │
-└──────────────────────┬────────────────────────────┘
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-    Controllers    Services      Utilities
-        │              │              │
-    Auth/Content/  Business    Manager/Validator
-    Approval       Logic       Classes
-        │              │              │
-        └──────────────┼──────────────┘
-                       │
-                   Routes
-                       │
-                   Middleware
-                       │
-              Database (PostgreSQL)
+Express Application (DI Container)
+│
+├── Controllers (HTTP I/O)
+│   ├── AuthController
+│   ├── ContentController
+│   ├── ApprovalController
+│   ├── AnalyticsController
+│   └── BroadcastController
+│
+├── Services (Business Logic)
+│   ├── AuthService
+│   ├── ContentService
+│   ├── ApprovalService
+│   ├── AnalyticsService
+│   └── RotationService
+│
+├── Utilities (Managers)
+│   ├── JwtManager
+│   ├── PasswordManager
+│   ├── S3FileManager
+│   ├── RedisManager (Cache)
+│   └── Validators
+│
+├── Middleware (Cross-cutting)
+│   ├── Authentication
+│   ├── Authorization
+│   ├── Rate Limiting
+│   ├── Error Handling
+│   └── Request Logging
+│
+└── Database (PostgreSQL + Redis)
+    ├── Users
+    ├── Contents
+    ├── ContentSchedules
+    ├── Approvals
+    └── ContentUsage (Analytics)
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
-- **Node.js** 16+ 
-- **PostgreSQL** 12+
-- **npm** or **yarn**
+- Node.js 16+, PostgreSQL 12+, Docker & Docker Compose
 
 ### Installation
 
-1. **Clone Repository**
+1. **Clone & Install**
    ```bash
    git clone https://github.com/l-ashar-l/Content-Broadcasting-System.git
    cd Content-Broadcasting-System
-   ```
-
-2. **Install Dependencies**
-   ```bash
    npm install
    ```
 
-3. **Setup Environment Variables**
+2. **Setup Environment**
    ```bash
    cp .env.example .env
    ```
 
-   Edit `.env` with your configuration:
-   ```
-   # Database
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=content_broadcasting
-   DB_USER=postgres
-   DB_PASSWORD=your_password
-   DB_DIALECT=postgres
-
-   # JWT
-   JWT_SECRET=your_secret_key_change_in_production
-   JWT_EXPIRE=7d
-
-   # Server
-   PORT=5000
-   NODE_ENV=development
-
-   # File Upload
-   MAX_FILE_SIZE=10485760
-   UPLOAD_PATH=./uploads
-
-
-    # AWS S3 Configuration
-    AWS_ACCESS_KEY_ID=
-    AWS_SECRET_ACCESS_KEY=
-    AWS_REGION=ap-south-1
-    AWS_BUCKET_NAME=content-broadcast
-   ```
-
-4. **Create Database**
+3. **Run with Docker**
    ```bash
-   psql -U postgres -c "CREATE DATABASE content_broadcasting;"
+   docker-compose up -d
+   ```
+
+4. **Access API**
+   - API: http://localhost:5000/api
+   - Swagger Docs: http://localhost:5000/api-docs
+
+## ⚙️ Configuration
+
+### Environment Variables
+```env
+# Database
+DB_HOST=postgres
+DB_PORT=5432
+DB_NAME=content_broadcasting
+DB_USER=postgres
+DB_PASSWORD=password
+
+# Authentication
+JWT_SECRET=your_secret_key
+JWT_EXPIRE=7d
+
+# Server
+PORT=5000
+NODE_ENV=development
+
+# Caching
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# File Upload
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=./uploads
+
+# AWS S3
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+AWS_REGION=ap-south-1
+AWS_BUCKET_NAME=content-broadcast
+```
+
+## 📊 Key Features Implemented
+
+### 1. Redis Caching
+- Caches live content endpoints (5-min TTL)
+- Improves performance for frequently accessed data
+- Graceful degradation if Redis unavailable
+- Cache keys: `live_content_{teacherId}`, `live_content_{teacherId}_{subject}`
+
+### 2. Rate Limiting
+- **Public API**: 10 req/15 min per IP
+- **Auth Endpoints**: 5 req/15 min per IP
+- **Upload**: 20 req/hour per user
+- **Analytics**: 30 req/hour per IP
+
+### 3. Analytics System
+Five analytics endpoints for usage tracking:
+- `POST /api/analytics/usage` - Record content usage (public)
+- `GET /api/analytics/subjects/most-active` - Top subjects by usage
+- `GET /api/analytics/subjects` - All subject statistics
+- `GET /api/analytics/content/:id/usage` - Per-content statistics
+- `GET /api/analytics/trend` - Usage trends over time
+
+Tracks three action types: **view**, **download**, **share**
+
+## 🐳 Docker Commands
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Access database shell
+docker-compose exec postgres psql -U postgres -d content_broadcasting
+
+# Access Redis CLI
+docker-compose exec redis redis-cli
+
+# Stop all services
+docker-compose down
+
+# Clean slate (remove volumes)
+docker-compose down -v
+```
+
+## 📁 Project Structure
+
+```
+src/
+├── models/                 (Sequelize ORM models)
+│   ├── User.js
+│   ├── Content.js
+│   ├── ContentUsage.js     (✨ NEW - Analytics)
+│   └── ...
+├── services/               (Business logic)
+│   ├── AuthService.js
+│   ├── AnalyticsService.js (✨ NEW - Analytics)
+│   └── ...
+├── controllers/            (HTTP handlers)
+│   ├── AuthController.js
+│   ├── AnalyticsController.js (✨ NEW - Analytics)
+│   └── ...
+├── routes/                 (API endpoints)
+│   ├── auth.routes.js
+│   ├── analytics.routes.js (✨ NEW - Analytics)
+│   └── ...
+├── middlewares/            (Express middleware)
+│   ├── auth.middleware.js
+│   ├── rate-limit.middleware.js (✨ NEW)
+│   └── error.middleware.js
+├── utils/                  (Utility managers)
+│   ├── JwtManager.js
+│   ├── RedisManager.js     (✨ NEW)
+│   └── ...
+└── app.js                  (Application factory)
+```
+
+## 🔐 API Security
+
+- **RBAC**: Two roles - `principal` (admin), `teacher` (user)
+- **JWT Tokens**: 7-day expiration, secure storage required
+- **Rate Limiting**: Protects against brute force and abuse
+- **Input Validation**: All inputs validated before processing
+- **CORS**: Configurable CORS policies
+- **Error Handling**: Sanitized error messages in production
+
+## 📝 Documentation
+
+- **Swagger UI**: Available at `/api-docs`
+- **Architecture Notes**: See `architecture-notes.txt`
+- **Implementation Guide**: Features documented inline
+
+## 🛠️ Development
+
+```bash
+# Run locally (requires PostgreSQL & Redis)
+npm run dev
+
+# Run production build
+npm start
+
+# Run tests (when available)
+npm test
+```
+
+## 📄 License
+
+Proprietary - Content Broadcasting System
    ```
 
 5. **Start Development Server**
