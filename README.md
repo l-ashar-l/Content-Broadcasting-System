@@ -58,7 +58,7 @@ Express Application (DI Container)
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 16+, PostgreSQL 12+, Docker & Docker Compose
+- Node.js 22+, PostgreSQL 12+, Docker & Docker Compose
 
 ### Installation
 
@@ -80,8 +80,8 @@ Express Application (DI Container)
    ```
 
 4. **Access API**
-   - API: http://localhost:5000/api
-   - Swagger Docs: http://localhost:5000/api-docs
+   - API: http://localhost:8000/api
+   - Swagger Docs: http://localhost:8000/api-docs
 
 ## ⚙️ Configuration
 
@@ -99,7 +99,7 @@ JWT_SECRET=your_secret_key
 JWT_EXPIRE=7d
 
 # Server
-PORT=5000
+PORT=8000
 NODE_ENV=development
 
 # Caching
@@ -233,7 +233,7 @@ Proprietary - Content Broadcasting System
    npm run dev
    ```
 
-   Server will run at: `http://localhost:5000`
+   Server will run at: `http://localhost:8000`
 
 6. **Start Production Server**
    ```bash
@@ -244,7 +244,7 @@ Proprietary - Content Broadcasting System
 
 ### Base URL
 ```
-http://localhost:5000/api
+http://localhost:8000/api
 ```
 
 ### Authentication
@@ -543,17 +543,17 @@ Upload → Pending → [Approved / Rejected]
 
 ```bash
 # Register
-curl -X POST http://localhost:5000/api/auth/register \
+curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"name":"Teacher","email":"teacher@school.edu","password":"123456","role":"teacher"}'
 
 # Login
-curl -X POST http://localhost:5000/api/auth/login \
+curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"teacher@school.edu","password":"123456"}'
 
 # Upload Content
-curl -X POST http://localhost:5000/api/content/upload \
+curl -X POST http://localhost:8000/api/content/upload \
   -H "Authorization: Bearer <token>" \
   -F "file=@image.jpg" \
   -F "title=Question Paper" \
@@ -562,7 +562,7 @@ curl -X POST http://localhost:5000/api/content/upload \
   -F "end_time=2025-04-26T12:00:00Z"
 
 # Get Live Content (Public)
-curl http://localhost:5000/api/content/live/1
+curl http://localhost:8000/api/content/live/1
 ```
 
 ## 📁 Project Structure
