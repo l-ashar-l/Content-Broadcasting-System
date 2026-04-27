@@ -1,5 +1,8 @@
 # Content Broadcasting System - Backend API
 
+```Application Service:```
+https://content-broadcasting-system-0fyq.onrender.com/api-docs/
+
 Production-ready backend system for distributing educational content with approval workflows, intelligent scheduling, and analytics. Built with Node.js, Express, PostgreSQL, and Redis following SOLID principles.
 
 ## 📚 Tech Stack
