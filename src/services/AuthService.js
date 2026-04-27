@@ -13,22 +13,18 @@ export default class AuthService {
   async register(userData) {
     const { name, email, password, role } = userData;
 
-    // Validate input
     Validator.validateRequiredFields(userData, ['name', 'email', 'password', 'role']);
     Validator.validateEmail(email);
     Validator.validatePassword(password);
     Validator.validateRole(role);
 
-    // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       throw new AppError('Email already registered', 409);
     }
 
-    // Hash password
     const hashedPassword = await this.passwordManager.hashPassword(password);
 
-    // Create user
     const user = await User.create({
       name,
       email,
@@ -43,13 +39,11 @@ export default class AuthService {
     Validator.validateEmail(email);
     Validator.validateRequiredFields({ password }, ['password']);
 
-    // Find user
     const user = await User.findOne({ where: { email } });
     if (!user) {
       throw new AppError('Invalid email or password', 401);
     }
 
-    // Verify password
     const isPasswordValid = await this.passwordManager.comparePassword(
       password,
       user.password_hash
@@ -58,7 +52,6 @@ export default class AuthService {
       throw new AppError('Invalid email or password', 401);
     }
 
-    // Generate token
     const token = this.jwtManager.generateToken({
       id: user.id,
       email: user.email,

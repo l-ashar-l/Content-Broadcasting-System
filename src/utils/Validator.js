@@ -38,7 +38,6 @@ export default class Validator {
   }
 
   static validateSubject(subject) {
-    // Add valid subjects here
     const validSubjects = ['Maths', 'Science', 'English', 'History', 'Geography'];
     this.validateEnum(subject, validSubjects, 'subject');
   }

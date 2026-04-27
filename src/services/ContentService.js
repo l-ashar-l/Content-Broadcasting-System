@@ -10,14 +10,12 @@ export default class ContentService {
     const { title, subject, description, userId, start_time, end_time, rotation_duration } =
       contentData;
 
-    // Validate input
     Validator.validateRequiredFields({ title, subject, userId }, ['title', 'subject', 'userId']);
 
     if (!file) {
       throw new AppError('No file provided', 400);
     }
 
-    // Validate schedule if provided
     if (start_time || end_time) {
       ScheduleCalculator.validateScheduleData({ start_time, end_time, rotation_duration });
     }
