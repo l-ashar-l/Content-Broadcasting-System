@@ -76,7 +76,7 @@ A production-ready, enterprise-grade backend system for distributing educational
    DB_DIALECT=postgres
 
    # JWT
-   JWT_SECRET=your_secret_key_change_in_production
+   JWT_SECRET=secret_key
    JWT_EXPIRE=7d
 
    # Server
@@ -88,11 +88,11 @@ A production-ready, enterprise-grade backend system for distributing educational
    UPLOAD_PATH=./uploads
 
 
-    # AWS S3 Configuration
-    AWS_ACCESS_KEY_ID=
-    AWS_SECRET_ACCESS_KEY=
-    AWS_REGION=ap-south-1
-    AWS_BUCKET_NAME=content-broadcast
+   # AWS S3 Configuration
+   AWS_ACCESS_KEY_ID=
+   AWS_SECRET_ACCESS_KEY=
+   AWS_REGION=ap-south-1
+   AWS_BUCKET_NAME=content-broadcast
    ```
 
 4. **Create Database**
