@@ -1,0 +1,174 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+// Utilities
+import ResponseFormatter from './utils/ResponseFormatter.js';
+import { ErrorHandler, RequestLogger } from './middlewares/error.middleware.js';
+
+// Models and Database
+import sequelize from './config/database.js';
+import { User, Content, ContentSlot, ContentSchedule } from './models/index.js';
+
+// Middleware classes
+import AuthMiddleware from './middlewares/auth.middleware.js';
+import UploadMiddleware from './middlewares/upload.middleware.js';
+
+// Manager classes
+import JwtManager from './utils/JwtManager.js';
+import PasswordManager from './utils/PasswordManager.js';
+import FileManager from './utils/FileManager.js';
+
+// Service classes
+import AuthService from './services/AuthService.js';
+import ContentService from './services/ContentService.js';
+import ApprovalService from './services/ApprovalService.js';
+import RotationService from './services/RotationService.js';
+
+// Controller classes
+import AuthController from './controllers/AuthController.js';
+import ContentController from './controllers/ContentController.js';
+import ApprovalController from './controllers/ApprovalController.js';
+import BroadcastController from './controllers/BroadcastController.js';
+
+// Route factory functions
+import { createAuthRoutes } from './routes/auth.routes.js';
+import { createContentRoutes } from './routes/content.routes.js';
+import { createApprovalRoutes } from './routes/approval.routes.js';
+
+dotenv.config();
+
+/**
+ * Application Factory - Creates Express app with dependency injection
+ * Follows OOP principles: All dependencies are injected
+ * Follows DIP: High-level modules don't depend on low-level modules,
+ *              both depend on abstractions (injected services)
+ */
+class ApplicationFactory {
+  constructor() {
+    this.app = express();
+    this.initializeMiddlewares();
+    this.initializeDependencies();
+    this.initializeRoutes();
+    this.initializeErrorHandling();
+  }
+
+  /**
+   * Initialize global middlewares
+   */
+  initializeMiddlewares() {
+    this.app.use(cors());
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: true }));
+    this.app.use(RequestLogger.log);
+  }
+
+  /**
+   * Initialize all dependencies using dependency injection
+   * Follows DIP: All dependencies are injected at app initialization
+   */
+  initializeDependencies() {
+    // Managers (utilities)
+    const jwtManager = new JwtManager(
+      process.env.JWT_SECRET || 'your-secret-key',
+      process.env.JWT_EXPIRE || '7d'
+    );
+    const passwordManager = new PasswordManager(10);
+    const fileManager = new FileManager(
+      process.env.UPLOAD_PATH || './uploads',
+      parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024
+    );
+
+    // Middleware instances
+    this.authMiddleware = new AuthMiddleware(jwtManager);
+    this.uploadMiddleware = new UploadMiddleware(
+      process.env.UPLOAD_PATH || './uploads',
+      parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024
+    );
+
+    // Services (business logic)
+    const authService = new AuthService(passwordManager, jwtManager);
+    const contentService = new ContentService();
+    const approvalService = new ApprovalService();
+    const rotationService = new RotationService();
+
+    // Controllers (request handlers)
+    this.authController = new AuthController(authService);
+    this.contentController = new ContentController(contentService, fileManager);
+    this.approvalController = new ApprovalController(approvalService);
+    this.broadcastController = new BroadcastController(rotationService);
+  }
+
+  /**
+   * Initialize routes
+   */
+  initializeRoutes() {
+    // Health check endpoint
+    this.app.get('/health', (req, res) => {
+      res.status(200).json(ResponseFormatter.success({ status: 'ok' }, 'Server is running'));
+    });
+
+    // API Routes
+    this.app.use(
+      '/api/auth',
+      createAuthRoutes(this.authController, this.authMiddleware)
+    );
+
+    this.app.use(
+      '/api/content',
+      createContentRoutes(
+        this.contentController,
+        this.broadcastController,
+        this.authMiddleware,
+        this.uploadMiddleware
+      )
+    );
+
+    this.app.use(
+      '/api/approval',
+      createApprovalRoutes(this.approvalController, this.authMiddleware)
+    );
+
+    // 404 handler
+    this.app.use((req, res) => {
+      res
+        .status(404)
+        .json(ResponseFormatter.error('Route not found', 404));
+    });
+  }
+
+  /**
+   * Initialize error handling
+   */
+  initializeErrorHandling() {
+    this.app.use((err, req, res, next) => {
+      ErrorHandler.handle(err, req, res, next);
+    });
+  }
+
+  /**
+   * Get the Express app instance
+   */
+  getApp() {
+    return this.app;
+  }
+
+  /**
+   * Initialize database
+   */
+  async initializeDatabase() {
+    try {
+      await sequelize.authenticate();
+      console.log('Database connection established');
+      await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+      console.log('Database synchronized');
+    } catch (error) {
+      console.error('Database initialization error:', error);
+      throw error;
+    }
+  }
+}
+
+// Create and export the application
+const appFactory = new ApplicationFactory();
+export default appFactory;

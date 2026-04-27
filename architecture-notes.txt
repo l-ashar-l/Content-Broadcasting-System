@@ -1,0 +1,770 @@
+================================================================================
+                    ARCHITECTURE NOTES
+            Content Broadcasting System - Backend Architecture
+================================================================================
+
+1. OVERVIEW
+-----------
+This is a production-ready, enterprise-grade backend system following SOLID 
+principles and Object-Oriented Programming (OOP) patterns. The architecture 
+emphasizes clean code, maintainability, scalability, and testability.
+
+Technology Stack:
+  - Runtime: Node.js (ES6+ Modules)
+  - Framework: Express.js
+  - Database: PostgreSQL with Sequelize ORM
+  - Authentication: JWT (JSON Web Tokens)
+  - Password Security: bcrypt
+  - File Upload: Multer
+  - Process Manager: Nodemon (development)
+
+================================================================================
+
+2. ARCHITECTURE & DESIGN PATTERNS
+---------------------------------
+
+A. SOLID PRINCIPLES IMPLEMENTATION:
+
+   1. Single Responsibility Principle (SRP)
+      - Each class has ONE reason to change
+      - Managers handle specific tasks (JWT, Passwords, Files)
+      - Services contain business logic
+      - Controllers handle HTTP I/O
+      - Models define data structures
+      
+      Example:
+        ✓ JwtManager: ONLY JWT operations
+        ✓ PasswordManager: ONLY password hashing/comparison
+        ✓ AuthService: ONLY authentication business logic
+        ✓ AuthController: ONLY HTTP request/response handling
+
+   2. Open/Closed Principle (OCP)
+      - Open for extension, closed for modification
+      - Services can be extended without modifying existing code
+      - Middleware can be chained for cross-cutting concerns
+      - Storage strategies can be swapped (local/S3)
+      
+      Example:
+        ✓ UploadMiddleware can be extended to support S3
+        ✓ New services can be added without modifying routes
+        ✓ New validators can be added to Validator class
+
+   3. Liskov Substitution Principle (LSP)
+      - Subtypes must be substitutable for their base types
+      - All middleware implementations follow Express middleware signature
+      - All services implement consistent interfaces
+      
+      Example:
+        ✓ Any storage manager can replace FileManager
+        ✓ Controllers follow consistent request/response patterns
+
+   4. Interface Segregation Principle (ISP)
+      - Classes depend on specific interfaces, not general ones
+      - UploadMiddleware depends on file validation, not entire file system
+      - Each service has focused responsibility
+      
+      Example:
+        ✓ AuthMiddleware only provides auth-related methods
+        ✓ ContentService only handles content operations
+
+   5. Dependency Inversion Principle (DIP)
+      - Depend on abstractions, not concrete implementations
+      - All dependencies are injected at initialization
+      - Services don't create their own dependencies
+      
+      Example:
+        ✓ AuthService depends on PasswordManager interface
+        ✓ Routes depend on injected controllers
+        ✓ Controllers depend on injected services
+
+B. DESIGN PATTERNS:
+
+   1. Dependency Injection (DI)
+      - All dependencies injected at application startup
+      - Location: ApplicationFactory.initializeDependencies()
+      - Benefits: Easy testing, loose coupling, flexibility
+      
+   2. Factory Pattern
+      - ApplicationFactory creates and configures entire app
+      - Route factories create router instances with dependencies
+      - Centralizes object creation logic
+      
+   3. Service Layer Pattern
+      - Business logic separated from HTTP concerns
+      - Services are reusable and testable
+      - Controllers delegate to services
+      
+   4. Middleware Chain Pattern
+      - Express middleware for cross-cutting concerns
+      - Authentication, logging, error handling
+      - Can be easily added/removed without changing core logic
+      
+   5. Repository Pattern
+      - Models act as repositories for data access
+      - Services use models to access data
+      - Future: Easy to swap database implementations
+
+================================================================================
+
+3. FOLDER STRUCTURE & LAYER ARCHITECTURE
+-----------------------------------------
+
+src/
+├── config/              # Configuration
+│   └── database.js      # Database connection setup
+│
+├── controllers/         # HTTP Request Handlers (Thin)
+│   ├── AuthController.js
+│   ├── ContentController.js
+│   ├── ApprovalController.js
+│   └── BroadcastController.js
+│
+├── middlewares/         # Express Middleware
+│   ├── auth.middleware.js       # JWT authentication
+│   ├── error.middleware.js      # Global error handling
+│   ├── role.middleware.js       # Role-based access control
+│   └── upload.middleware.js     # File upload configuration
+│
+├── models/              # Database Models
+│   ├── User.js          # User model
+│   ├── Content.js       # Content model
+│   ├── ContentSlot.js   # Subject slots
+│   ├── ContentSchedule.js # Rotation schedules
+│   └── index.js         # Relationships setup
+│
+├── routes/              # Route Definitions
+│   ├── auth.routes.js
+│   ├── content.routes.js
+│   └── approval.routes.js
+│
+├── services/            # Business Logic (Thick)
+│   ├── AuthService.js           # Auth operations
+│   ├── ContentService.js         # Content management
+│   ├── ApprovalService.js        # Approval workflow
+│   └── rotation.service.js       # CRITICAL: Scheduling logic
+│
+├── utils/               # Utility Classes
+│   ├── AppError.js              # Custom error class
+│   ├── FileManager.js           # File operations
+│   ├── JwtManager.js            # JWT operations
+│   ├── PasswordManager.js        # Password hashing
+│   ├── ResponseFormatter.js     # API response formatting
+│   ├── ScheduleCalculator.js    # CRITICAL: Rotation calculations
+│   └── Validator.js             # Input validation
+│
+├── app.js               # Application Factory & Setup
+└── server.js            # Entry point
+
+uploads/                # File storage directory
+
+================================================================================
+
+4. AUTHENTICATION & RBAC FLOW
+-----------------------------
+
+FLOW DIAGRAM:
+┌─────────────────────────────────────────────────────────────┐
+│ 1. LOGIN REQUEST (POST /api/auth/login)                     │
+│    → Email & Password                                        │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. AuthService.login()                                       │
+│    → Find user by email                                      │
+│    → Compare password with bcrypt                            │
+│    → Generate JWT token (id, email, role)                   │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. RESPONSE                                                  │
+│    {                                                         │
+│      user: {id, name, email, role},                         │
+│      token: "eyJhbGc..."                                     │
+│    }                                                         │
+└─────────────────────────────────────────────────────────────┘
+
+PROTECTED ROUTES:
+1. AuthMiddleware.verifyToken()
+   - Extracts token from Authorization header
+   - Verifies token validity with JwtManager
+   - Attaches user info to req.user
+
+2. RoleMiddleware.verifyRole(...roles)
+   - Checks if user.role matches required roles
+   - Throws 403 error if unauthorized
+
+ROLE HIERARCHY:
+  - Principal: Full access to approval & management
+  - Teacher: Upload content, view their own content
+  - Student: Public API access (no authentication needed)
+
+PASSWORD SECURITY:
+  - Hashed with bcrypt (10 salt rounds)
+  - Never stored in plaintext
+  - Compared using bcrypt.compare()
+  - JWT secrets are environment-based
+
+================================================================================
+
+5. SUBJECT-BASED CONTENT SYSTEM DESIGN
+---------------------------------------
+
+DATABASE RELATIONSHIPS:
+┌──────────────────────┐
+│       Users          │ (Teachers & Principals)
+└──────────┬───────────┘
+           │ (uploaded_by)
+           │
+┌──────────▼──────────┐
+│      Content        │ (Educational materials)
+│  - title            │
+│  - subject          │
+│  - file_path        │
+│  - start_time       │ (Teacher-defined window)
+│  - end_time         │ (Teacher-defined window)
+│  - rotation_duration│ (Minutes per rotation)
+│  - status           │ (pending/approved/rejected)
+└──────────┬──────────┘
+           │
+           ├──────────────┬──────────────────────┐
+           │ (content_id) │                      │
+           │              │                      │
+       ┌───▼─────────────┐   ┌──────────────────▼───┐
+       │  ContentSchedule│   │   ContentSlot        │
+       │  - rotation_order   │  - subject           │
+       │  - duration         │  (unique constraint) │
+       └──────────────────┘   └──────────────────────┘
+
+SUBJECT GROUPING:
+  Each subject has ONE ContentSlot (e.g., "Maths", "Science")
+  Multiple Content items can belong to same subject
+  ContentSchedule defines rotation order and duration for each content
+
+EXAMPLE:
+  Subject: "Maths"
+  ├── Content A: Question Paper (duration: 5 min)
+  ├── Content B: Announcement (duration: 3 min)
+  └── Content C: Tutorial (duration: 5 min)
+  
+  Rotation cycle: A (5 min) → B (3 min) → C (5 min) → repeat
+
+================================================================================
+
+6. SCHEDULING & ROTATION LOGIC (CRITICAL)
+-------------------------------------------
+
+SCHEDULING FLOW:
+
+1. TEACHER UPLOADS CONTENT WITH SCHEDULING:
+   POST /api/content/upload
+   {
+     "title": "Question Paper",
+     "subject": "Maths",
+     "start_time": "2025-04-26T10:00:00Z",
+     "end_time": "2025-04-26T12:00:00Z",
+     "rotation_duration": 5
+   }
+
+2. STATUS TIMELINE:
+   ┌─────────────────────────────────────┐
+   │ Content uploaded with scheduling    │
+   │ Status: "pending"                   │
+   └──────────────────┬──────────────────┘
+                      │ (Principal review)
+                      ▼
+   ┌─────────────────────────────────────┐
+   │ Principal approves content          │
+   │ Status: "approved"                  │
+   └──────────────────┬──────────────────┘
+                      │ (Time arrives)
+                      ▼
+   ┌─────────────────────────────────────┐
+   │ Content becomes LIVE during window  │
+   │ Status: "approved" + time check     │
+   └─────────────────────────────────────┘
+
+3. ACTIVE CONTENT DETERMINATION:
+
+   ScheduleCalculator.getActiveContent():
+   
+   Step 1: Filter by status = "approved"
+   Step 2: Check if current time is within [start_time, end_time]
+   Step 3: Calculate rotation index based on time and duration
+   
+   Formula:
+   - earliest_start = Math.min(all start_times)
+   - elapsed_ms = now - earliest_start
+   - total_cycle_ms = sum(all durations) in milliseconds
+   - time_in_cycle = elapsed_ms % total_cycle_ms
+   
+   Step 4: Find which content slot contains time_in_cycle
+
+4. EXAMPLE CALCULATION:
+   Content in rotation for "Maths":
+   - Content A: duration 5 min (0-300 sec)
+   - Content B: duration 3 min (300-480 sec)
+   - Content C: duration 5 min (480-780 sec)
+   Total cycle: 780 seconds (13 minutes)
+   
+   If current time at 350 seconds into cycle:
+   → Between 300-480 sec → Content B is active
+   
+   If current time at 900 seconds into cycle:
+   → 900 % 780 = 120 seconds → Content A is active
+
+5. EDGE CASES HANDLED:
+   ✓ No content available
+     → Return empty response (not error)
+   
+   ✓ Content approved but outside time window
+     → Not shown to students
+   
+   ✓ Content approved but no start_time/end_time
+     → Treated as inactive (must have schedule)
+   
+   ✓ Invalid subject
+     → Return empty response (not error)
+   
+   ✓ Rotation with single content
+     → Shows same content continuously during window
+
+================================================================================
+
+7. FILE UPLOAD HANDLING
+-----------------------
+
+UPLOAD FLOW:
+┌──────────────────────────────────────┐
+│ POST /api/content/upload             │
+│ - file (multipart/form-data)         │
+│ - title, subject, description        │
+│ - start_time, end_time               │
+│ - rotation_duration                  │
+└──────────┬───────────────────────────┘
+           │
+           ▼
+┌──────────────────────────────────────┐
+│ UploadMiddleware validation          │
+│ ✓ File size <= 10MB                  │
+│ ✓ MIME type in [image/jpeg, ...]     │
+│ ✓ File not null                      │
+└──────────┬───────────────────────────┘
+           │
+           ▼
+┌──────────────────────────────────────┐
+│ Multer generates filename            │
+│ Format: {timestamp}-{random}.{ext}   │
+│ Stored in: ./uploads/                │
+└──────────┬───────────────────────────┘
+           │
+           ▼
+┌──────────────────────────────────────┐
+│ ContentService creates database entry│
+│ - file_path: stored filename         │
+│ - file_type: MIME type               │
+│ - file_size: bytes                   │
+│ - status: "pending"                  │
+└──────────┬───────────────────────────┘
+           │
+           ▼
+┌──────────────────────────────────────┐
+│ Response with content metadata       │
+└──────────────────────────────────────┘
+
+SUPPORTED FORMATS:
+  - JPG/JPEG
+  - PNG
+  - GIF
+
+FILE CONSTRAINTS:
+  - Max size: 10MB (configurable via env)
+  - Storage: Local filesystem (./uploads)
+  - Optional: S3 storage (bonus feature)
+
+FILE OPERATIONS:
+  ✓ Validate before upload
+  ✓ Generate unique filename
+  ✓ Store in upload directory
+  ✓ Delete on content rejection
+  ✓ Return file metadata
+
+================================================================================
+
+8. APPROVAL WORKFLOW DESIGN
+---------------------------
+
+WORKFLOW STATES:
+┌─────────────────────────────────────────────────────────────┐
+│ UPLOADED STATE                                              │
+│ - Content uploaded by teacher                              │
+│ - Status: "pending"                                         │
+│ - Waiting for principal review                             │
+└──────────────────────────┬────────────────────────────────┘
+                           │
+         ┌─────────────────┴─────────────────┐
+         │                                   │
+    APPROVE                              REJECT
+         │                                   │
+         ▼                                   ▼
+    ┌────────────────┐             ┌──────────────────┐
+    │ Status:        │             │ Status:          │
+    │ "approved"     │             │ "rejected"       │
+    │ approved_by:   │             │ approved_by:     │
+    │ {principal_id} │             │ {principal_id}   │
+    │ approved_at:   │             │ rejection_reason │
+    │ {timestamp}    │             │ {text}           │
+    └────────────────┘             └──────────────────┘
+         │
+         ├─ NOT in time window → Hidden
+         ├─ NO time window → Hidden
+         └─ In time window → LIVE (via rotation)
+
+APPROVAL ENDPOINTS:
+  POST /api/approval/approve/:contentId
+    - Principal only
+    - Sets status to "approved"
+    - Records principal ID and timestamp
+
+  POST /api/approval/reject/:contentId
+    - Principal only
+    - Sets status to "rejected"
+    - Stores rejection reason
+    - Rejection reason visible to teacher
+
+  GET /api/approval/status/:contentId
+    - Any authenticated user
+    - Returns full approval metadata
+
+  GET /api/approval/stats
+    - Principal only
+    - Returns counts: pending, approved, rejected, total
+
+REJECTION HANDLING:
+  - Rejection reason is mandatory
+  - Reason visible to uploading teacher
+  - Teacher can modify and resubmit
+  - Original rejection record maintained
+
+================================================================================
+
+9. PUBLIC BROADCASTING API
+--------------------------
+
+ENDPOINT: GET /api/content/live/:teacherId
+
+DESCRIPTION:
+  - Public endpoint (NO authentication)
+  - Returns currently active content for a teacher
+  - Respects scheduling and rotation
+
+USAGE (By Students):
+  GET /api/content/live/1        (Get all active content for teacher 1)
+  GET /api/content/live/1/subject/Maths  (Get Maths content for teacher 1)
+
+RESPONSE - Success:
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "Live content retrieved successfully",
+    "data": {
+      "Maths": {
+        "id": 1,
+        "title": "Question Paper",
+        "subject": "Maths",
+        "file_path": "1234567890-987654321.pdf",
+        "start_time": "2025-04-26T10:00:00Z",
+        "end_time": "2025-04-26T12:00:00Z"
+      }
+    }
+  }
+
+RESPONSE - No Content:
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "No content available",
+    "data": null
+  }
+
+RESPONSE - Invalid Subject:
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "No content available",
+    "data": null
+  }
+
+KEY FEATURES:
+  ✓ Returns one active content per subject per teacher
+  ✓ Respects teacher-defined time windows
+  ✓ Automatically rotates based on duration
+  ✓ No error for missing content (graceful)
+  ✓ Cacheable response (optional: Redis)
+
+================================================================================
+
+10. DATABASE SCHEMA OVERVIEW
+-----------------------------
+
+USERS TABLE:
+  id: INT PRIMARY KEY AUTO_INCREMENT
+  name: VARCHAR(255) NOT NULL
+  email: VARCHAR(255) UNIQUE NOT NULL
+  password_hash: VARCHAR(255) NOT NULL
+  role: ENUM('principal', 'teacher') DEFAULT 'teacher'
+  created_at: DATETIME DEFAULT NOW()
+  updated_at: DATETIME DEFAULT NOW()
+
+CONTENTS TABLE:
+  id: INT PRIMARY KEY AUTO_INCREMENT
+  title: VARCHAR(255) NOT NULL
+  description: TEXT
+  subject: VARCHAR(100) NOT NULL
+  file_path: VARCHAR(500) NOT NULL
+  file_type: VARCHAR(50) NOT NULL
+  file_size: BIGINT NOT NULL
+  uploaded_by: INT NOT NULL REFERENCES users(id)
+  status: ENUM('uploaded','pending','approved','rejected') DEFAULT 'pending'
+  rejection_reason: TEXT
+  approved_by: INT REFERENCES users(id)
+  approved_at: DATETIME
+  start_time: DATETIME
+  end_time: DATETIME
+  rotation_duration: INT DEFAULT 5 (in minutes)
+  created_at: DATETIME DEFAULT NOW()
+  updated_at: DATETIME DEFAULT NOW()
+
+CONTENT_SLOTS TABLE:
+  id: INT PRIMARY KEY AUTO_INCREMENT
+  subject: VARCHAR(100) UNIQUE NOT NULL
+  created_at: DATETIME DEFAULT NOW()
+
+CONTENT_SCHEDULES TABLE:
+  id: INT PRIMARY KEY AUTO_INCREMENT
+  content_id: INT NOT NULL REFERENCES contents(id)
+  slot_id: INT NOT NULL REFERENCES content_slots(id)
+  rotation_order: INT DEFAULT 0
+  duration: INT DEFAULT 5 (in minutes)
+  created_at: DATETIME DEFAULT NOW()
+
+INDEXES:
+  - contents(uploaded_by, status)
+  - contents(subject, status, start_time)
+  - content_schedules(slot_id, rotation_order)
+
+================================================================================
+
+11. ERROR HANDLING & VALIDATION
+-------------------------------
+
+ERROR HIERARCHY:
+  AppError (Custom)
+    ├── 400 Bad Request (Validation errors)
+    ├── 401 Unauthorized (Auth failures)
+    ├── 403 Forbidden (Permission denied)
+    ├── 404 Not Found (Resource not found)
+    ├── 409 Conflict (Resource exists)
+    └── 500 Internal Server Error
+
+ERROR RESPONSE FORMAT:
+  {
+    "success": false,
+    "statusCode": 400,
+    "message": "Validation error description",
+    "errors": null or {detailed_errors}
+  }
+
+VALIDATION RULES:
+  Email:
+    ✓ Valid email format required
+    ✓ Unique in database
+
+  Password:
+    ✓ Minimum 6 characters
+    ✓ Hashed with bcrypt before storage
+
+  Subject:
+    ✓ Predefined list: [Maths, Science, English, History, Geography]
+    ✓ Case-sensitive
+
+  Role:
+    ✓ Must be "principal" or "teacher"
+
+  File:
+    ✓ Must be JPG, PNG, or GIF
+    ✓ Max 10MB
+    ✓ Required field
+
+  Scheduling:
+    ✓ start_time < end_time
+    ✓ start_time cannot be in past
+    ✓ rotation_duration >= 1 minute
+
+VALIDATION IMPLEMENTATION:
+  - Validator class with static methods
+  - Validates at controller/service boundary
+  - Centralized, reusable validation logic
+  - Custom error messages
+
+================================================================================
+
+12. MIDDLEWARE CHAIN & FLOW
+---------------------------
+
+REQUEST FLOW:
+┌───────────────────┐
+│  Express Request  │
+└────────┬──────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│ CORS Middleware         │ Enable cross-origin
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│ Body Parser             │ Parse JSON body
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│ Request Logger          │ Log incoming request
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐ (Optional)
+│ Route Matching          │
+└────────┬────────────────┘
+         │
+    ┌────┴────┬────────────┬─────────────┐
+    │          │            │             │
+    ▼          ▼            ▼             ▼
+  AUTH    CONTENT      APPROVAL      BROADCAST
+    │          │            │             │
+    ├─ Verify ├─ Verify   ├─ Verify    └─ Public
+    │  Token  │  Token    │  Token        (no auth)
+    │         │           │
+    ├─ Verify ├─ Verify   └─ Verify
+    │  Role   │  Role        Role
+    │         │
+    └─ Handle ├─ File Upload
+       Request │  Validation
+              │
+              └─ Handle Request
+
+ERROR HANDLING CHAIN:
+  Route Handler
+    └─ Throws AppError
+        └─ Caught by error middleware
+            └─ Formatted response sent
+
+================================================================================
+
+13. SCALABILITY & PERFORMANCE CONSIDERATIONS
+---------------------------------------------
+
+DATABASE OPTIMIZATION:
+  ✓ Connection pooling (5 connections)
+  ✓ Indexed queries for fast lookups
+  ✓ Eager loading with associations
+  ✓ Pagination for large result sets
+
+OPTIONAL CACHING (Bonus):
+  ✓ Redis cache for /api/content/live
+  ✓ Cache key: teacher_id:subject
+  ✓ TTL: 1 minute (shorter than rotation cycle)
+  ✓ Invalidate on content approval/rejection
+
+RATE LIMITING (Bonus):
+  ✓ Protect public API endpoints
+  ✓ Per-IP rate limiting
+  ✓ Prevent abuse from students
+
+S3 STORAGE (Bonus):
+  ✓ Replace local storage with AWS S3
+  ✓ Implement IStorageProvider interface
+  ✓ Automatic file cleanup
+
+MONITORING:
+  ✓ Logging at each layer
+  ✓ Error tracking
+  ✓ Performance metrics
+  ✓ Database connection health
+
+DEPLOYMENT:
+  ✓ Environment-based configuration
+  ✓ Database migrations
+  ✓ Process manager (PM2 in production)
+  ✓ Reverse proxy (Nginx)
+
+================================================================================
+
+14. TESTING STRATEGY
+--------------------
+
+UNIT TESTS:
+  ✓ Test each utility class (Validator, FileManager, etc.)
+  ✓ Test each service method in isolation
+  ✓ Mock database for speed
+
+INTEGRATION TESTS:
+  ✓ Test service + repository interaction
+  ✓ Test complete workflows (upload → approve → broadcast)
+
+API TESTS:
+  ✓ Test all endpoints with various inputs
+  ✓ Test authorization and authentication
+  ✓ Test error scenarios
+
+EXAMPLES:
+  - Validator.validateEmail() with valid/invalid emails
+  - AuthService.login() with correct/incorrect credentials
+  - ContentService.uploadContent() with various file types
+  - RotationService.getActiveContent() with different time scenarios
+
+================================================================================
+
+15. SECURITY BEST PRACTICES
+---------------------------
+
+AUTHENTICATION:
+  ✓ JWT tokens (no session storage required)
+  ✓ Tokens include user ID, email, and role
+  ✓ Token expiration (default 7 days)
+  ✓ Secret key from environment (never hardcoded)
+
+AUTHORIZATION:
+  ✓ Role-based access control (RBAC)
+  ✓ Principal-only endpoints enforced
+  ✓ Teacher-only endpoints enforced
+  ✓ User can only access own content
+
+PASSWORD SECURITY:
+  ✓ Never store plaintext passwords
+  ✓ bcrypt with 10 salt rounds
+  ✓ Unique passwords enforced
+  ✓ Minimum 6 characters
+
+DATA VALIDATION:
+  ✓ Input sanitization
+  ✓ Type checking
+  ✓ Enum validation
+  ✓ File type verification
+
+SENSITIVE DATA:
+  ✓ Passwords never in API responses
+  ✓ No sensitive data in logs
+  ✓ Proper error messages (don't expose internals)
+  ✓ HTTPS in production
+
+FILE SECURITY:
+  ✓ Whitelist allowed file types
+  ✓ Enforce file size limits
+  ✓ Unique filenames (prevent overwrite)
+  ✓ Store outside web root
+
+================================================================================
+
+END OF ARCHITECTURE NOTES
