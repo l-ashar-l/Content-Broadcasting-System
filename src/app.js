@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
+import { specs } from './config/swagger.js';
 
 // Utilities
 import ResponseFormatter from './utils/ResponseFormatter.js';
@@ -12,12 +14,12 @@ import { User, Content, ContentSlot, ContentSchedule } from './models/index.js';
 
 // Middleware classes
 import AuthMiddleware from './middlewares/auth.middleware.js';
-import UploadMiddleware from './middlewares/upload.middleware.js';
+import S3UploadMiddleware from './middlewares/s3upload.middleware.js';
 
 // Manager classes
 import JwtManager from './utils/JwtManager.js';
 import PasswordManager from './utils/PasswordManager.js';
-import FileManager from './utils/FileManager.js';
+import S3FileManager from './utils/S3FileManager.js';
 
 // Service classes
 import AuthService from './services/AuthService.js';
@@ -74,15 +76,13 @@ class ApplicationFactory {
       process.env.JWT_EXPIRE || '7d'
     );
     const passwordManager = new PasswordManager(10);
-    const fileManager = new FileManager(
-      process.env.UPLOAD_PATH || './uploads',
+    const s3FileManager = new S3FileManager(
       parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024
     );
 
     // Middleware instances
     this.authMiddleware = new AuthMiddleware(jwtManager);
-    this.uploadMiddleware = new UploadMiddleware(
-      process.env.UPLOAD_PATH || './uploads',
+    this.uploadMiddleware = new S3UploadMiddleware(
       parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024
     );
 
@@ -94,7 +94,7 @@ class ApplicationFactory {
 
     // Controllers (request handlers)
     this.authController = new AuthController(authService);
-    this.contentController = new ContentController(contentService, fileManager);
+    this.contentController = new ContentController(contentService, s3FileManager);
     this.approvalController = new ApprovalController(approvalService);
     this.broadcastController = new BroadcastController(rotationService);
   }
@@ -103,6 +103,10 @@ class ApplicationFactory {
    * Initialize routes
    */
   initializeRoutes() {
+    // Swagger API Documentation
+    this.app.use('/api-docs', swaggerUi.serve);
+    this.app.get('/api-docs', swaggerUi.setup(specs, { explorer: true }));
+
     // Health check endpoint
     this.app.get('/health', (req, res) => {
       res.status(200).json(ResponseFormatter.success({ status: 'ok' }, 'Server is running'));

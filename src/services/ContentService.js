@@ -2,6 +2,7 @@ import { Content, ContentSlot, ContentSchedule } from '../models/index.js';
 import AppError from '../utils/AppError.js';
 import Validator from '../utils/Validator.js';
 import ScheduleCalculator from '../utils/ScheduleCalculator.js';
+import { s3StorageManager } from '../utils/s3singletons.js';
 
 /**
  * ContentService - Handles content operations
@@ -32,12 +33,24 @@ export default class ContentService {
       ScheduleCalculator.validateScheduleData({ start_time, end_time, rotation_duration });
     }
 
-    // Create content
+    // Upload file to S3
+    let s3Key;
+    try {
+      s3Key = await s3StorageManager.uploadFile(
+        file.buffer,
+        file.originalname,
+        file.mimetype
+      );
+    } catch (error) {
+      throw new AppError('Failed to upload file to S3. Please try again.', 500);
+    }
+
+    // Create content with S3 key as file_path
     const content = await Content.create({
       title,
       subject,
       description,
-      file_path: file.filename,
+      file_path: s3Key,
       file_type: file.mimetype,
       file_size: file.size,
       uploaded_by: userId,

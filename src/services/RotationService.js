@@ -13,7 +13,7 @@ export default class RotationService {
    * Get live content for a teacher with rotation
    * This is the core API endpoint logic
    * @param {number} teacherId - Teacher ID
-   * @returns {Promise<Object|null>} Active content or null
+   * @returns {Promise<Array|null>} Array of active contents or null
    */
   async getLiveContent(teacherId) {
     const contents = await Content.findAll({
@@ -44,15 +44,15 @@ export default class RotationService {
     });
 
     // Get active content for each subject
-    const activeContent = {};
+    const activeContents = [];
     for (const [subject, items] of Object.entries(bySubject)) {
       const active = ScheduleCalculator.getActiveContent(items);
       if (active) {
-        activeContent[subject] = active;
+        activeContents.push(active);
       }
     }
 
-    return Object.keys(activeContent).length > 0 ? activeContent : null;
+    return activeContents.length > 0 ? activeContents : null;
   }
 
   /**

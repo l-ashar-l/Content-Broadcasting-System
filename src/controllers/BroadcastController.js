@@ -1,4 +1,5 @@
 import ResponseFormatter from '../utils/ResponseFormatter.js';
+import { s3StorageManager } from '../utils/s3singletons.js';
 
 /**
  * BroadcastController - Handles public broadcast endpoints
@@ -24,19 +25,40 @@ export default class BroadcastController {
     try {
       const { teacherId } = req.params;
 
-      const activeContent = await this.rotationService.getLiveContent(teacherId);
+      const activeContents = await this.rotationService.getLiveContent(teacherId);
 
-      if (!activeContent) {
+      if (!activeContents || activeContents.length === 0) {
         return res
           .status(200)
-          .json(ResponseFormatter.success(null, 'No content available'));
+          .json(ResponseFormatter.success([], 'No content available'));
       }
+
+      // Generate signed URLs for all contents
+      const contentsWithUrls = await Promise.all(
+        activeContents.map(async (content) => {
+          let downloadUrl = null;
+          if (content.file_path) {
+            try {
+              downloadUrl = await s3StorageManager.getSignedUrl(content.file_path, 3600);
+            } catch (error) {
+              console.error('Failed to generate signed URL:', error);
+            }
+          }
+
+          return {
+            ...content.toJSON(),
+            download_url: downloadUrl,
+            url_expires_in: 3600,
+            url_expires_at: downloadUrl ? new Date(Date.now() + 3600 * 1000).toISOString() : null,
+          };
+        })
+      );
 
       res
         .status(200)
         .json(
           ResponseFormatter.success(
-            activeContent,
+            contentsWithUrls,
             'Live content retrieved successfully'
           )
         );
@@ -68,11 +90,28 @@ export default class BroadcastController {
           .json(ResponseFormatter.success(null, 'No content available'));
       }
 
+      // Generate signed URL for file download
+      let downloadUrl = null;
+      if (activeContent.file_path) {
+        try {
+          downloadUrl = await s3StorageManager.getSignedUrl(activeContent.file_path, 3600);
+        } catch (error) {
+          console.error('Failed to generate signed URL:', error);
+        }
+      }
+
+      const contentData = {
+        ...activeContent.toJSON(),
+        download_url: downloadUrl,
+        url_expires_in: 3600,
+        url_expires_at: downloadUrl ? new Date(Date.now() + 3600 * 1000).toISOString() : null,
+      };
+
       res
         .status(200)
         .json(
           ResponseFormatter.success(
-            activeContent,
+            contentData,
             'Live content retrieved successfully'
           )
         );
