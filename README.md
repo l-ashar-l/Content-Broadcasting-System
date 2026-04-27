@@ -463,31 +463,6 @@ architecture-notes.txt   # Detailed architecture
 4. **Interface Segregation** - Specific interfaces, not general ones
 5. **Dependency Inversion** - Depend on abstractions, not implementations
 
-## 🚀 Deployment
-
-### Production Checklist
-
-- [ ] Update `.env` with production values
-- [ ] Set `NODE_ENV=production`
-- [ ] Use strong JWT secret
-- [ ] Configure database backups
-- [ ] Set up SSL/TLS (HTTPS)
-- [ ] Use production process manager (PM2)
-- [ ] Set up monitoring and logging
-- [ ] Configure rate limiting
-- [ ] Enable CORS selectively
-
-### Environment Variables (Production)
-
-```bash
-NODE_ENV=production
-PORT=5000
-JWT_SECRET=very_long_random_secret_key_here
-DB_HOST=your_db_host
-DB_PASSWORD=strong_password
-# ... other vars
-```
-
 ## 🐛 Error Handling
 
 All errors follow standard format:
@@ -516,25 +491,8 @@ All errors follow standard format:
 - 🔲 AWS S3 Integration
 - 🔲 Subject-wise Analytics
 - 🔲 Pagination & Advanced Filters
-- 🔲 Email Notifications
-- 🔲 Real-time WebSocket Updates
-
-## 📝 License
-
-ISC License
 
 ## 👨‍💻 Author
 
 Ashar - Backend Developer
 
-## 🤝 Contributing
-
-Feel free to submit PRs and issues!
-
-## 📞 Support
-
-For issues and questions, please create a GitHub issue.
-
----
-
-**Last Updated:** April 26, 2025
