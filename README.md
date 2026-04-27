@@ -622,5 +622,5 @@ All errors follow standard format:
 
 ## 👨‍💻 Author
 
-Ashar - Backend Developer
+Ashar
 
